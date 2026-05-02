@@ -21,7 +21,7 @@ const slugify = (s) =>
 
 const DEFAULT_EMOJI = "📁";
 
-// Palette pour assigner automatiquement des couleurs distinctes
+// Palette de secours quand la colonne "color" n'est pas remplie
 const COLOR_PALETTE = [
   "#4a7fa5", "#c44536", "#7d8c4d", "#b8860b", "#5d4e75",
   "#2a7f7f", "#a0522d", "#6b8e23", "#8b6914", "#4682b4",
@@ -41,6 +41,7 @@ function parseWorkbook(workbook) {
   const categories = [];
   if (wsCats) {
     const rows = XLSX.utils.sheet_to_json(wsCats, { defval: "" });
+    // Trier par 'ordre' si présent
     const rowsWithIdx = rows.map((r, i) => ({ ...r, _rowIdx: i }));
     rowsWithIdx.sort((a, b) => {
       const oa = parseFloat(a.ordre);
@@ -54,12 +55,15 @@ function parseWorkbook(workbook) {
       const label = (row.label || "").trim();
       if (!label) return;
       const id = (row.id || "").trim() || slugify(label);
+      const colorFromXlsx = (row.color || "").trim();
+      const urlFromXlsx = (row.url || "").trim();
       categories.push({
         id,
         label,
         emoji: (row.emoji || "").trim() || DEFAULT_EMOJI,
-        color: colorForIndex(i),
+        color: colorFromXlsx || colorForIndex(i),
         cover: (row.cover || "").trim() || label,
+        url: urlFromXlsx || null,
       });
     });
   } else {
@@ -73,21 +77,27 @@ function parseWorkbook(workbook) {
     const rows = XLSX.utils.sheet_to_json(wsSubs, { defval: "" });
     rows.forEach((row, i) => {
       const label = (row.label || "").trim();
-      const catLabel = (row.categorie || "").trim();
+      const catRef = (row.categorie || "").trim();
       if (!label) return;
-      const parent = categories.find((c) => slugify(c.label) === slugify(catLabel));
+      // 'categorie' peut être un id (ex: "fanfare") ou un libellé (ex: "fanfare et instruments")
+      const parent =
+        categories.find((c) => c.id === catRef) ||
+        categories.find((c) => slugify(c.label) === slugify(catRef));
       if (!parent) {
-        warnings.push(`Sous-catégorie "${label}" : catégorie parent "${catLabel}" introuvable.`);
+        warnings.push(`Sous-catégorie "${label}" : catégorie parent "${catRef}" introuvable.`);
         return;
       }
       const id = (row.id || "").trim() || slugify(label);
+      const colorFromXlsx = (row.color || "").trim();
+      const urlFromXlsx = (row.url || "").trim();
       subcategories.push({
         id,
         categoryId: parent.id,
         label,
         emoji: (row.emoji || "").trim() || DEFAULT_EMOJI,
-        color: colorForIndex(i + 7),
+        color: colorFromXlsx || colorForIndex(i + 7),
         cover: (row.cover || "").trim() || label,
+        url: urlFromXlsx || null,
       });
     });
   } else {
@@ -102,26 +112,55 @@ function parseWorkbook(workbook) {
     rows.forEach((row) => {
       const wordLabel = (row.mot || "").trim();
       if (!wordLabel) return;
-      const subIds = [];
-      for (const lbl of (row.sous_categories || "").split(";")) {
-        const t = lbl.trim();
-        if (!t) continue;
-        const sub = subcategories.find((s) => slugify(s.label) === slugify(t));
-        if (sub) subIds.push(sub.id);
-      }
-      const catIds = [];
-      for (const lbl of (row.categories_directes || "").split(";")) {
-        const t = lbl.trim();
-        if (!t) continue;
-        const cat = categories.find((c) => slugify(c.label) === slugify(t));
-        if (cat) catIds.push(cat.id);
-      }
-      const niveau = (row.niveau || "A1").trim().toUpperCase();
-      const tags = (row.tags || "").split(",").map((t) => t.trim()).filter(Boolean);
+      const id = (row.id || "").trim() || slugify(wordLabel);
+
+      // Sous-catégories (séparateur ; ou ,)
+      const subRaw = (row.sous_categories || "").toString();
+      const subIds = subRaw
+        .split(/[;,]/)
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((label) => {
+          const sub = subcategories.find(
+            (s) => slugify(s.label) === slugify(label) || s.id === label
+          );
+          if (!sub) {
+            warnings.push(`Mot "${wordLabel}" : sous-catégorie "${label}" introuvable.`);
+            return null;
+          }
+          return sub.id;
+        })
+        .filter(Boolean);
+
+      // Catégories directes
+      const catRaw = (row.categories_directes || "").toString();
+      const catIds = catRaw
+        .split(/[;,]/)
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((label) => {
+          const cat = categories.find(
+            (c) => slugify(c.label) === slugify(label) || c.id === label
+          );
+          if (!cat) {
+            warnings.push(`Mot "${wordLabel}" : catégorie "${label}" introuvable.`);
+            return null;
+          }
+          return cat.id;
+        })
+        .filter(Boolean);
+
+      // Tags
+      const tagRaw = (row.tags || "").toString();
+      const tags = tagRaw
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+
       words.push({
-        id: (row.id || "").trim() || slugify(wordLabel),
+        id,
         word: wordLabel,
-        niveau: ["A1", "A2", "B1", "B2"].includes(niveau) ? niveau : "A1",
+        niveau: (row.niveau || "").trim() || "A1",
         definition: (row.definition || "").trim(),
         exemple: (row.exemple || "").trim(),
         astuce: (row.astuce || "").trim(),
@@ -196,6 +235,9 @@ export function useVocab() {
         const wb = XLSX.read(new Uint8Array(buf), { type: "array" });
         const parsed = parseWorkbook(wb);
         if (cancelled) return;
+        if (parsed.warnings.length > 0) {
+          console.warn("[useVocab] Avertissements lors du parsing:", parsed.warnings);
+        }
         setData({
           categories: parsed.categories,
           subcategories: parsed.subcategories,
@@ -204,12 +246,11 @@ export function useVocab() {
           loading: false,
           error: parsed.errors.length > 0 ? parsed.errors.join(" / ") : null,
         });
-        if (parsed.warnings.length > 0) {
-          console.warn("Avertissements :", parsed.warnings);
+      } catch (e) {
+        console.error("[useVocab] Erreur chargement data.xlsx:", e);
+        if (!cancelled) {
+          setData((d) => ({ ...d, loading: false, error: e.message }));
         }
-      } catch (err) {
-        if (cancelled) return;
-        setData((d) => ({ ...d, loading: false, error: err.message }));
       }
     })();
     return () => {
@@ -217,67 +258,75 @@ export function useVocab() {
     };
   }, []);
 
+  const { categories, subcategories, words, connections } = data;
+
+  // ──────── Index par id ────────
   const wordById = useMemo(() => {
     const m = new Map();
-    for (const w of data.words) m.set(w.id, w);
+    for (const w of words) m.set(w.id, w);
     return m;
-  }, [data.words]);
+  }, [words]);
 
   const categoryById = useMemo(() => {
     const m = new Map();
-    for (const c of data.categories) m.set(c.id, c);
+    for (const c of categories) m.set(c.id, c);
     return m;
-  }, [data.categories]);
+  }, [categories]);
 
   const subcategoryById = useMemo(() => {
     const m = new Map();
-    for (const s of data.subcategories) m.set(s.id, s);
+    for (const s of subcategories) m.set(s.id, s);
     return m;
-  }, [data.subcategories]);
+  }, [subcategories]);
 
+  // Mots par sous-catégorie
   const wordsBySubcategory = useMemo(() => {
     const m = new Map();
-    for (const w of data.words) {
+    for (const w of words) {
       for (const sid of w.subcategoryIds || []) {
         if (!m.has(sid)) m.set(sid, []);
         m.get(sid).push(w);
       }
     }
     return m;
-  }, [data.words]);
+  }, [words]);
 
+  // Mots par catégorie (directe ou via sous-catégorie)
   const wordsByCategory = useMemo(() => {
     const m = new Map();
-    for (const w of data.words) {
-      const catIds = new Set(w.categoryIds || []);
+    for (const w of words) {
+      const catSet = new Set(w.categoryIds || []);
       for (const sid of w.subcategoryIds || []) {
         const sub = subcategoryById.get(sid);
-        if (sub) catIds.add(sub.categoryId);
+        if (sub) catSet.add(sub.categoryId);
       }
-      for (const cid of catIds) {
+      for (const cid of catSet) {
         if (!m.has(cid)) m.set(cid, []);
-        if (!m.get(cid).find((x) => x.id === w.id)) m.get(cid).push(w);
+        m.get(cid).push(w);
       }
     }
     return m;
-  }, [data.words, subcategoryById]);
+  }, [words, subcategoryById]);
 
+  // Sous-catégories par catégorie
   const subcategoriesByCategory = useMemo(() => {
     const m = new Map();
-    for (const s of data.subcategories) {
+    for (const s of subcategories) {
       if (!m.has(s.categoryId)) m.set(s.categoryId, []);
       m.get(s.categoryId).push(s);
     }
     return m;
-  }, [data.subcategories]);
+  }, [subcategories]);
 
+  // ──────── Connexions d'un mot ────────
   const getConnections = useCallback(
     (wordId) => {
       const direct = new Set();
-      for (const c of data.connections) {
+      for (const c of connections) {
         if (c.from === wordId) direct.add(c.to);
         if (c.to === wordId) direct.add(c.from);
       }
+      // Compléter avec mots de la même sous-catégorie
       const w = wordById.get(wordId);
       if (w) {
         for (const sid of w.subcategoryIds || []) {
@@ -291,19 +340,21 @@ export function useVocab() {
         .filter(Boolean)
         .slice(0, 8);
     },
-    [data.connections, wordById, wordsBySubcategory]
+    [connections, wordById, wordsBySubcategory]
   );
 
+  // ──────── Tags (extraits dynamiquement) ────────
   const allTags = useMemo(() => {
     const s = new Set();
-    for (const w of data.words) for (const t of w.tags || []) s.add(t);
+    for (const w of words) for (const t of w.tags || []) s.add(t);
     return Array.from(s).sort();
-  }, [data.words]);
+  }, [words]);
 
+  // ──────── Favoris ────────
   const toggleFavorite = useCallback((id) => {
-    setFavorites((prev) => {
-      return prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id];
-    });
+    setFavorites((prev) =>
+      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
+    );
   }, []);
 
   const resetFavorites = useCallback(() => {
