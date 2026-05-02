@@ -2,8 +2,8 @@
   "files": [],
   "references": [
     { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" },
-    "allowJs": true,
+    { "path": "./tsconfig.node.json" }
+  ],
+  "allowJs": true,
   "noImplicitAny": false
-  ]
 }
