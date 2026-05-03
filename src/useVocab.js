@@ -319,6 +319,9 @@ export function useVocab() {
   }, [subcategories]);
 
   // ──────── Connexions d'un mot ────────
+  // Uniquement les liens explicites de la feuille « Liens » du data.xlsx.
+  // Les mots de la même sous-catégorie ne sont PAS ajoutés automatiquement
+  // (ils restent accessibles en remontant d'un niveau dans la navigation).
   const getConnections = useCallback(
     (wordId) => {
       const direct = new Set();
@@ -326,21 +329,12 @@ export function useVocab() {
         if (c.from === wordId) direct.add(c.to);
         if (c.to === wordId) direct.add(c.from);
       }
-      // Compléter avec mots de la même sous-catégorie
-      const w = wordById.get(wordId);
-      if (w) {
-        for (const sid of w.subcategoryIds || []) {
-          for (const sib of wordsBySubcategory.get(sid) || []) {
-            if (sib.id !== wordId) direct.add(sib.id);
-          }
-        }
-      }
       return Array.from(direct)
         .map((id) => wordById.get(id))
         .filter(Boolean)
         .slice(0, 8);
     },
-    [connections, wordById, wordsBySubcategory]
+    [connections, wordById]
   );
 
   // ──────── Tags (extraits dynamiquement) ────────
