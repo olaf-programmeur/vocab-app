@@ -176,17 +176,38 @@ function parseWorkbook(workbook) {
   }
 
   // ─── LIENS ───
+  // Format souple : chaque ligne contient un "mot pivot" en mot_1 et
+  // autant de mots reliés que voulu en mot_2, mot_3, ... mot_N.
+  // Les liens sont bidirectionnels donc l'ordre n'importe pas.
   const wsConn = workbook.Sheets["Liens"];
   const connections = [];
   if (wsConn) {
     const rows = XLSX.utils.sheet_to_json(wsConn, { defval: "" });
-    rows.forEach((row) => {
-      const m1 = (row.mot_1 || "").trim();
-      const m2 = (row.mot_2 || "").trim();
-      if (!m1 || !m2) return;
+    rows.forEach((row, rowIdx) => {
+      const m1 = (row.mot_1 || "").toString().trim();
+      if (!m1) return;
       const w1 = words.find((w) => w.word.toLowerCase() === m1.toLowerCase());
-      const w2 = words.find((w) => w.word.toLowerCase() === m2.toLowerCase());
-      if (w1 && w2) {
+      if (!w1) {
+        warnings.push(`Liens ligne ${rowIdx + 2} : mot_1 "${m1}" introuvable dans la feuille Mots.`);
+        return;
+      }
+      // Trouver toutes les colonnes mot_N (N >= 2) dans l'ordre numérique
+      const targetKeys = Object.keys(row)
+        .filter((k) => /^mot_\d+$/.test(k) && k !== "mot_1")
+        .sort((a, b) => {
+          const na = parseInt(a.split("_")[1], 10);
+          const nb = parseInt(b.split("_")[1], 10);
+          return na - nb;
+        });
+      for (const key of targetKeys) {
+        const m2 = (row[key] || "").toString().trim();
+        if (!m2) continue;
+        const w2 = words.find((w) => w.word.toLowerCase() === m2.toLowerCase());
+        if (!w2) {
+          warnings.push(`Liens ligne ${rowIdx + 2} : ${key} "${m2}" introuvable dans la feuille Mots.`);
+          continue;
+        }
+        if (w1.id === w2.id) continue; // pas de lien d'un mot avec lui-même
         connections.push({ from: w1.id, to: w2.id });
       }
     });
