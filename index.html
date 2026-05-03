@@ -5,9 +5,52 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vite + React + TS</title>
-  </head>
+ </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+
+    <!-- 👇 ICI on colle tout le contenu de twemoji-snippet.html 👇 -->
+    <script src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/dist/twemoji.min.js" crossorigin="anonymous"></script>
+    <script>
+      (function () {
+        const TWEMOJI_OPTS = {
+          base: 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/',
+          folder: 'svg',
+          ext: '.svg',
+          className: 'tw-emoji'
+        };
+        let timer = null;
+        function scheduleParse() {
+          clearTimeout(timer);
+          timer = setTimeout(() => {
+            if (window.twemoji) {
+              window.twemoji.parse(document.body, TWEMOJI_OPTS);
+            }
+          }, 50);
+        }
+        function init() {
+          scheduleParse();
+          const obs = new MutationObserver(scheduleParse);
+          obs.observe(document.body, {
+            childList: true,
+            subtree: true,
+            characterData: true
+          });
+        }
+        if (document.readyState === 'complete') init();
+        else window.addEventListener('load', init);
+      })();
+    </script>
+    <style>
+      .tw-emoji {
+        height: 1em;
+        width: 1em;
+        margin: 0 0.05em 0 0.1em;
+        vertical-align: -0.1em;
+        display: inline-block;
+      }
+    </style>
+    <!-- 👆 fin du snippet 👆 -->
   </body>
 </html>
