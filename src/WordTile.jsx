@@ -17,9 +17,11 @@ export default function WordTile({ word, isFavorite, onToggleFav, onClick }) {
       >
         {isFavorite ? "❤️" : "🤍"}
       </button>
-      <WordImage url={word.url} search={word.search} size={180} />
-      <span className="tile-word">{word.word}</span>
-      <span className={`level-btn l${word.niveau}`}>{word.niveau}</span>
+      <WordImage url={word.url} search={word.search} size={218} />
+      <div className="tile-footer">
+        <span className="tile-word">{word.word}</span>
+        <span className={`level-btn l${word.niveau}`}>{word.niveau}</span>
+      </div>
     </div>
   );
 }

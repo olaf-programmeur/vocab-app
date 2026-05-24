@@ -513,7 +513,7 @@ html, body, #root {
 
 .word-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
   gap: 16px;
   padding: 24px 0;
 }
@@ -538,6 +538,14 @@ html, body, #root {
   transform: scale(1.03);
   border-color: var(--accent);
   box-shadow: 0 4px 18px rgba(74, 127, 165, 0.15);
+}
+
+.tile-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .tile-word {
