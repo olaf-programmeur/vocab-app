@@ -4,18 +4,19 @@ const PEXELS_API_KEY =
   "eQnVpwDBZmAkbaCw4SKWHXrSzAhPuw8DtLf8rtPRahwRzwOqDumWB2Jd";
 
 const imageCache = {};
-async function fetchPexelsImage(query) {
-  if (imageCache[query]) return imageCache[query];
+async function fetchPexelsImage(query, orientation = "square") {
+  const cacheKey = `${query}_${orientation}`;
+  if (imageCache[cacheKey]) return imageCache[cacheKey];
   try {
     const res = await fetch(
       `https://api.pexels.com/v1/search?query=${encodeURIComponent(
         query
-      )}&per_page=1&orientation=square`,
+      )}&per_page=1&orientation=${orientation}`,
       { headers: { Authorization: PEXELS_API_KEY } }
     );
     const data = await res.json();
     const url = data.photos?.[0]?.src?.medium || null;
-    imageCache[query] = url;
+    imageCache[cacheKey] = url;
     return url;
   } catch {
     return null;
@@ -42,7 +43,7 @@ export default function WordImage({ url: customUrl, search, size = 120 }) {
       return;
     }
     setLoading(true);
-    fetchPexelsImage(search).then((u) => {
+    fetchPexelsImage(search, isFull ? "landscape" : "square").then((u) => {
       setUrl(u);
       setLoading(false);
     });
