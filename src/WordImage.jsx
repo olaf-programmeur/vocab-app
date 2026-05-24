@@ -99,7 +99,8 @@ export default function WordImage({ url: customUrl, search, size = 120 }) {
       alt={search}
       style={{
         ...dimStyle,
-        objectFit: "cover",
+        objectFit: isFull ? "contain" : "cover",
+        background: isFull ? "#f7f4ef" : "none",
         borderRadius: isFull ? 0 : 12,
         display: "block",
       }}
