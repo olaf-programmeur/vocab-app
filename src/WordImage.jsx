@@ -26,6 +26,11 @@ export default function WordImage({ url: customUrl, search, size = 120 }) {
   const [url, setUrl] = useState(customUrl || null);
   const [loading, setLoading] = useState(!customUrl);
 
+  const isFull = size === "full";
+  const dimStyle = isFull
+    ? { width: "100%", aspectRatio: "4/3" }
+    : { width: size, height: size };
+
   useEffect(() => {
     if (customUrl) {
       setUrl(customUrl);
@@ -47,10 +52,9 @@ export default function WordImage({ url: customUrl, search, size = 120 }) {
     return (
       <div
         style={{
-          width: size,
-          height: size,
+          ...dimStyle,
           background: "#eee",
-          borderRadius: 12,
+          borderRadius: isFull ? 0 : 12,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -74,14 +78,13 @@ export default function WordImage({ url: customUrl, search, size = 120 }) {
     return (
       <div
         style={{
-          width: size,
-          height: size,
+          ...dimStyle,
           background: "#f0ece4",
-          borderRadius: 12,
+          borderRadius: isFull ? 0 : 12,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontSize: size * 0.35,
+          fontSize: isFull ? "2.5rem" : size * 0.35,
         }}
       >
         📷
@@ -94,10 +97,9 @@ export default function WordImage({ url: customUrl, search, size = 120 }) {
       src={url}
       alt={search}
       style={{
-        width: size,
-        height: size,
+        ...dimStyle,
         objectFit: "cover",
-        borderRadius: 12,
+        borderRadius: isFull ? 0 : 12,
         display: "block",
       }}
     />
