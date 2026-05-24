@@ -4,19 +4,18 @@ const PEXELS_API_KEY =
   "eQnVpwDBZmAkbaCw4SKWHXrSzAhPuw8DtLf8rtPRahwRzwOqDumWB2Jd";
 
 const imageCache = {};
-async function fetchPexelsImage(query, orientation = "square") {
-  const cacheKey = `${query}_${orientation}`;
-  if (imageCache[cacheKey]) return imageCache[cacheKey];
+async function fetchPexelsImage(query) {
+  if (imageCache[query]) return imageCache[query];
   try {
     const res = await fetch(
       `https://api.pexels.com/v1/search?query=${encodeURIComponent(
         query
-      )}&per_page=1&orientation=${orientation}`,
+      )}&per_page=1&orientation=square`,
       { headers: { Authorization: PEXELS_API_KEY } }
     );
     const data = await res.json();
     const url = data.photos?.[0]?.src?.medium || null;
-    imageCache[cacheKey] = url;
+    imageCache[query] = url;
     return url;
   } catch {
     return null;
@@ -26,11 +25,6 @@ async function fetchPexelsImage(query, orientation = "square") {
 export default function WordImage({ url: customUrl, search, size = 120 }) {
   const [url, setUrl] = useState(customUrl || null);
   const [loading, setLoading] = useState(!customUrl);
-
-  const isFull = size === "full";
-  const dimStyle = isFull
-    ? { width: "100%", aspectRatio: "4/3" }
-    : { width: size, height: size };
 
   useEffect(() => {
     if (customUrl) {
@@ -43,7 +37,7 @@ export default function WordImage({ url: customUrl, search, size = 120 }) {
       return;
     }
     setLoading(true);
-    fetchPexelsImage(search, isFull ? "landscape" : "square").then((u) => {
+    fetchPexelsImage(search).then((u) => {
       setUrl(u);
       setLoading(false);
     });
@@ -53,9 +47,10 @@ export default function WordImage({ url: customUrl, search, size = 120 }) {
     return (
       <div
         style={{
-          ...dimStyle,
+          width: size,
+          height: size,
           background: "#eee",
-          borderRadius: isFull ? 0 : 12,
+          borderRadius: 12,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -79,13 +74,14 @@ export default function WordImage({ url: customUrl, search, size = 120 }) {
     return (
       <div
         style={{
-          ...dimStyle,
+          width: size,
+          height: size,
           background: "#f0ece4",
-          borderRadius: isFull ? 0 : 12,
+          borderRadius: 12,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontSize: isFull ? "2.5rem" : size * 0.35,
+          fontSize: size * 0.35,
         }}
       >
         📷
@@ -98,10 +94,10 @@ export default function WordImage({ url: customUrl, search, size = 120 }) {
       src={url}
       alt={search}
       style={{
-        ...dimStyle,
-        objectFit: isFull ? "contain" : "cover",
-        background: isFull ? "#f7f4ef" : "none",
-        borderRadius: isFull ? 0 : 12,
+        width: size,
+        height: size,
+        objectFit: "cover",
+        borderRadius: 12,
         display: "block",
       }}
     />
