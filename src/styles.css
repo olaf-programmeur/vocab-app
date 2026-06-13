@@ -738,6 +738,82 @@ html, body, #root {
   border-bottom: 1px solid var(--border);
 }
 
+/* ─── Galerie d'images balayable (fiche du mot) ─── */
+.gallery {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.gallery-viewport {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #f0ece4;
+  touch-action: pan-y; /* laisse le scroll vertical, capte le balayage horizontal */
+  cursor: grab;
+  user-select: none;
+}
+.gallery-viewport:active { cursor: grabbing; }
+
+.gallery-track {
+  display: flex;
+  height: 100%;
+  will-change: transform;
+}
+
+.gallery-img {
+  object-fit: cover;
+  display: block;
+  flex: 0 0 100%;
+  pointer-events: none; /* évite que le drag de l'image gêne le balayage */
+}
+
+.gallery-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 1.7rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0 0 4px;
+  transition: background 0.15s ease;
+}
+.gallery-arrow:hover { background: rgba(0, 0, 0, 0.65); }
+.gallery-arrow-left { left: 6px; }
+.gallery-arrow-right { right: 6px; }
+
+.gallery-dots {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+.gallery-dot {
+  width: 11px;
+  height: 11px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--border, #ccc);
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.gallery-dot.active {
+  background: var(--text, #333);
+  transform: scale(1.25);
+}
+
 .detail-title-block { flex: 1; min-width: 200px; }
 
 .detail-word {

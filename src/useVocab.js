@@ -157,6 +157,24 @@ function parseWorkbook(workbook) {
         .map((t) => t.trim())
         .filter(Boolean);
 
+      // Images : colonne principale "image_url" + colonnes optionnelles
+      // "image_url_2", "image_url_3", … (dans l'ordre numérique).
+      // Une cellule peut aussi contenir plusieurs URLs séparées par ; ou |.
+      const imageUrls = Object.keys(row)
+        .filter((k) => /^image_url(_\d+)?$/.test(k))
+        .sort((a, b) => {
+          const na = a === "image_url" ? 1 : parseInt(a.split("_").pop(), 10);
+          const nb = b === "image_url" ? 1 : parseInt(b.split("_").pop(), 10);
+          return na - nb;
+        })
+        .flatMap((k) =>
+          (row[k] || "")
+            .toString()
+            .split(/[;|]/)
+            .map((u) => u.trim())
+        )
+        .filter(Boolean);
+
       words.push({
         id,
         word: wordLabel,
@@ -164,7 +182,8 @@ function parseWorkbook(workbook) {
         definition: (row.definition || "").trim(),
         exemple: (row.exemple || "").trim(),
         astuce: (row.astuce || "").trim(),
-        url: (row.image_url || "").trim() || null,
+        url: imageUrls[0] || null,
+        urls: imageUrls,
         search: (row.image_recherche || "").trim() || wordLabel,
         tags,
         subcategoryIds: subIds,

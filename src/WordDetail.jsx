@@ -1,4 +1,4 @@
-import WordImage from "./WordImage.jsx";
+import WordGallery from "./WordGallery.jsx";
 
 export default function WordDetail({
   word,
@@ -25,7 +25,7 @@ export default function WordDetail({
         </button>
 
         <div className="detail-header">
-          <WordImage url={word.url} search={word.search} size={220} />
+          <WordGallery urls={word.urls} search={word.search} size={220} />
           <div className="detail-title-block">
             <h2 className="detail-word">{word.word}</h2>
             <div className="detail-meta">
