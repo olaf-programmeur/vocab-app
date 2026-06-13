@@ -701,7 +701,7 @@ html, body, #root {
   border: 1.5px solid var(--border);
   width: 100%;
   max-width: 640px;
-  padding: 28px;
+  padding: 20px 28px 28px;
   position: relative;
   box-shadow: var(--shadow-lg);
   animation: sup 0.22s ease;
@@ -711,12 +711,12 @@ html, body, #root {
 
 .detail-close {
   position: absolute;
-  top: 14px;
-  right: 14px;
+  top: 10px;
+  right: 12px;
   background: var(--bg2);
   border: none;
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   font-size: 1.2rem;
   cursor: pointer;
@@ -1150,7 +1150,7 @@ html, body, #root {
   .toolbar { gap: 6px; }
   .search-input { min-width: 100%; }
   .quiz-options { grid-template-columns: 1fr; }
-  .detail-card { padding: 52px 20px 20px; }
+  .detail-card { padding: 44px 20px 20px; }
   .detail-word { font-size: 1.7rem; }
 }
 
