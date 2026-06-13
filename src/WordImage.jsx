@@ -47,8 +47,8 @@ export default function WordImage({ url: customUrl, search, size = 120 }) {
     return (
       <div
         style={{
-          width: size,
-          height: size,
+          width: `min(${size}px, 100%)`,
+          aspectRatio: "1 / 1",
           background: "#eee",
           borderRadius: 12,
           display: "flex",
@@ -74,8 +74,8 @@ export default function WordImage({ url: customUrl, search, size = 120 }) {
     return (
       <div
         style={{
-          width: size,
-          height: size,
+          width: `min(${size}px, 100%)`,
+          aspectRatio: "1 / 1",
           background: "#f0ece4",
           borderRadius: 12,
           display: "flex",
@@ -94,8 +94,8 @@ export default function WordImage({ url: customUrl, search, size = 120 }) {
       src={url}
       alt={search}
       style={{
-        width: size,
-        height: size,
+        width: `min(${size}px, 100%)`,
+        aspectRatio: "1 / 1",
         objectFit: "cover",
         borderRadius: 12,
         display: "block",

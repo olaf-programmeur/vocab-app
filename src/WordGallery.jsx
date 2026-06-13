@@ -40,10 +40,10 @@ export default function WordGallery({ urls = [], search, size = 220 }) {
   const dragging = startX.current !== null;
 
   return (
-    <div className="gallery" style={{ width: size }}>
+    <div className="gallery" style={{ width: `min(${size}px, 100%)` }}>
       <div
         className="gallery-viewport"
-        style={{ width: size, height: size }}
+        style={{ width: "100%", aspectRatio: "1 / 1" }}
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}
@@ -63,7 +63,7 @@ export default function WordGallery({ urls = [], search, size = 220 }) {
               alt={`${search || ""} ${i + 1}/${list.length}`}
               draggable={false}
               className="gallery-img"
-              style={{ width: size, height: size }}
+              style={{ width: "100%", height: "100%" }}
             />
           ))}
         </div>
