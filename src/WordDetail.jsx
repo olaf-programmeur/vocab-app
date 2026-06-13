@@ -25,7 +25,7 @@ export default function WordDetail({
         </button>
 
         <div className="detail-header">
-          <WordGallery urls={word.urls} search={word.search} size={220} />
+          <WordGallery urls={word.urls} search={word.search} size={300} />
           <div className="detail-title-block">
             <h2 className="detail-word">{word.word}</h2>
             <div className="detail-meta">

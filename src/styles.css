@@ -771,28 +771,33 @@ html, body, #root {
   pointer-events: none; /* évite que le drag de l'image gêne le balayage */
 }
 
+/* Barre de navigation sous l'image : flèche ‹  points  flèche › */
+.gallery-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
 .gallery-arrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 40px;
-  height: 40px;
-  border: none;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.45);
-  color: #fff;
-  font-size: 1.7rem;
+  background: var(--bg2);
+  color: var(--text);
+  font-size: 1.6rem;
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   padding: 0 0 4px;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, opacity 0.15s ease;
 }
-.gallery-arrow:hover { background: rgba(0, 0, 0, 0.65); }
-.gallery-arrow-left { left: 6px; }
-.gallery-arrow-right { right: 6px; }
+.gallery-arrow:hover:not(:disabled) { background: var(--border); }
+.gallery-arrow:disabled { opacity: 0.35; cursor: default; }
 
 .gallery-dots {
   display: flex;
@@ -814,7 +819,7 @@ html, body, #root {
   transform: scale(1.25);
 }
 
-.detail-title-block { flex: 1; min-width: 200px; }
+.detail-title-block { flex: 1; min-width: 200px; padding-right: 30px; }
 
 .detail-word {
   font-family: 'Crimson Pro', "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", serif;

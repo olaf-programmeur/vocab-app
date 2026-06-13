@@ -67,41 +67,39 @@ export default function WordGallery({ urls = [], search, size = 220 }) {
             />
           ))}
         </div>
-
-        {index > 0 && (
-          <button
-            type="button"
-            className="gallery-arrow gallery-arrow-left"
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => go(index - 1)}
-            aria-label="Image précédente"
-          >
-            ‹
-          </button>
-        )}
-        {index < list.length - 1 && (
-          <button
-            type="button"
-            className="gallery-arrow gallery-arrow-right"
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => go(index + 1)}
-            aria-label="Image suivante"
-          >
-            ›
-          </button>
-        )}
       </div>
 
-      <div className="gallery-dots">
-        {list.map((_, i) => (
-          <button
-            type="button"
-            key={i}
-            className={`gallery-dot${i === index ? " active" : ""}`}
-            onClick={() => go(i)}
-            aria-label={`Image ${i + 1} sur ${list.length}`}
-          />
-        ))}
+      {/* Barre de navigation SOUS l'image : ‹ • • • › */}
+      <div className="gallery-controls">
+        <button
+          type="button"
+          className="gallery-arrow"
+          onClick={() => go(index - 1)}
+          disabled={index === 0}
+          aria-label="Image précédente"
+        >
+          ‹
+        </button>
+        <div className="gallery-dots">
+          {list.map((_, i) => (
+            <button
+              type="button"
+              key={i}
+              className={`gallery-dot${i === index ? " active" : ""}`}
+              onClick={() => go(i)}
+              aria-label={`Image ${i + 1} sur ${list.length}`}
+            />
+          ))}
+        </div>
+        <button
+          type="button"
+          className="gallery-arrow"
+          onClick={() => go(index + 1)}
+          disabled={index === list.length - 1}
+          aria-label="Image suivante"
+        >
+          ›
+        </button>
       </div>
     </div>
   );
