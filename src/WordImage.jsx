@@ -76,7 +76,7 @@ export default function WordImage({ url: customUrl, search, size = 120 }) {
         style={{
           width: `min(${size}px, 100%)`,
           aspectRatio: "1 / 1",
-          background: "#f0ece4",
+          background: "#fff",
           borderRadius: 12,
           display: "flex",
           alignItems: "center",

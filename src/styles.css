@@ -751,7 +751,7 @@ html, body, #root {
   position: relative;
   overflow: hidden;
   border-radius: 12px;
-  background: #f0ece4;
+  background: #fff;
   touch-action: pan-y; /* laisse le scroll vertical, capte le balayage horizontal */
   cursor: grab;
   user-select: none;
