@@ -753,7 +753,9 @@ html, body, #root {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  font-size: 1.2rem;
+  font-size: 1.4rem;
+  line-height: 1;
+  padding: 0;
   cursor: pointer;
   color: var(--text2);
   display: flex;

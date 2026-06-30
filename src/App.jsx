@@ -442,9 +442,9 @@ export default function App() {
             {visibleWords.length > 0 &&
               !(selectedCat && !selectedSub && subsOfSelectedCat.length > 0 && !search && !levelFilter && !tagFilter) && (
                 <div className="word-grid">
-                  {visibleWords.map((w) => (
+                  {visibleWords.map((w, i) => (
                     <WordTile
-                      key={w.id}
+                      key={`${w.id}-${i}`}
                       word={w}
                       isFavorite={vocab.isFavorite(w.id)}
                       onToggleFav={vocab.toggleFavorite}
