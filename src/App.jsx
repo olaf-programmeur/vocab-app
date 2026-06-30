@@ -17,7 +17,17 @@ export default function App() {
   // Navigation
   const [selectedCat, setSelectedCat] = useState(null);
   const [selectedSub, setSelectedSub] = useState(null);
-  const [selectedWord, setSelectedWord] = useState(null);
+  // Pile de fiches ouvertes : la dernière est affichée, les précédentes sont l'historique
+  const [wordStack, setWordStack] = useState([]);
+  const selectedWord = wordStack[wordStack.length - 1] || null;
+
+  const openWord = (w) => setWordStack([w]);                  // ouvrir une fiche (depuis la liste/les cartes)
+  const pushWord = (w) => setWordStack((s) => [...s, w]);     // suivre un mot relié → empile
+  // Flèche : referme toutes les fiches liées d'un coup → retour au mot de base ;
+  // si on est déjà sur le mot de base, ferme la fiche.
+  const popWord = () =>
+    setWordStack((s) => (s.length > 1 ? s.slice(0, 1) : []));
+  const closeWords = () => setWordStack([]);                  // tout fermer (clic en dehors)
 
   // UI
   const [viewMode, setViewMode] = useState("grid");
@@ -31,33 +41,67 @@ export default function App() {
   const [quizOpen, setQuizOpen] = useState(false);
   const [importExportOpen, setImportExportOpen] = useState(false);
 
+  // Minuscules + suppression des accents (é→e, ç→c…) pour une recherche tolérante
+  const normalize = (s) =>
+    (s || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(new RegExp("[\\u0300-\\u036f]", "g"), "");
+
   const matchesFilter = (w) => {
     if (levelFilter && w.niveau !== levelFilter) return false;
     if (tagFilter && !(w.tags || []).includes(tagFilter)) return false;
-    if (search && !w.word.toLowerCase().includes(search.toLowerCase()))
-      return false;
+    if (search) {
+      const q = normalize(search.trim());
+      // « contient n'importe où », en ignorant accents et majuscules
+      if (q && !normalize(w.word).includes(q)) return false;
+    }
     if (showFavorites && !vocab.isFavorite(w.id)) return false;
     return true;
   };
 
+  // Score de pertinence : 0 = le plus exact … 3 = le moins exact
+  const searchScore = (w, q) => {
+    const nw = normalize(w.word);
+    if (nw === q) return 0;                                   // mot identique
+    if (nw.startsWith(q)) return 1;                           // commence par la recherche
+    const tokens = nw.split(/[\s'’\-]+/);
+    if (tokens.some((t) => t.startsWith(q))) return 2;        // début d'un des mots
+    return 3;                                                 // contenu ailleurs dans le mot
+  };
+
+  // Trie une liste de mots du plus pertinent au moins pertinent
+  const sortByRelevance = (list) => {
+    const q = normalize(search.trim());
+    if (!q) return list;
+    return [...list].sort((a, b) => {
+      const d = searchScore(a, q) - searchScore(b, q);
+      if (d !== 0) return d;
+      const dl = normalize(a.word).length - normalize(b.word).length; // le plus court d'abord
+      if (dl !== 0) return dl;
+      return a.word.localeCompare(b.word, "fr");
+    });
+  };
+
   const visibleWords = useMemo(() => {
+    let result;
     if (showFavorites) {
-      return vocab.words.filter(matchesFilter);
-    }
-    if (selectedSub) {
-      return (vocab.wordsBySubcategory.get(selectedSub.id) || []).filter(
+      result = vocab.words.filter(matchesFilter);
+    } else if (selectedSub) {
+      result = (vocab.wordsBySubcategory.get(selectedSub.id) || []).filter(
         matchesFilter
       );
-    }
-    if (selectedCat) {
-      return (vocab.wordsByCategory.get(selectedCat.id) || []).filter(
+    } else if (selectedCat) {
+      result = (vocab.wordsByCategory.get(selectedCat.id) || []).filter(
         matchesFilter
       );
+    } else if (search || levelFilter || tagFilter) {
+      result = vocab.words.filter(matchesFilter);
+    } else {
+      return [];
     }
-    if (search || levelFilter || tagFilter) {
-      return vocab.words.filter(matchesFilter);
-    }
-    return [];
+    // En recherche, on classe du plus exact au moins exact
+    return search ? sortByRelevance(result) : result;
   }, [
     selectedSub,
     selectedCat,
@@ -132,13 +176,26 @@ export default function App() {
       </header>
 
       <div className="toolbar">
-        <input
-          type="text"
-          className="search-input"
-          placeholder="🔍 Rechercher un mot…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        <div className="search-wrap">
+          <input
+            type="text"
+            className="search-input"
+            placeholder="🔍 Rechercher un mot…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {search && (
+            <button
+              type="button"
+              className="search-clear"
+              onClick={() => setSearch("")}
+              aria-label="Effacer la recherche"
+              title="Effacer la recherche"
+            >
+              ×
+            </button>
+          )}
+        </div>
 
         <div className="toolbar-group">
           <button
@@ -276,7 +333,7 @@ export default function App() {
         {viewMode === "list" && !selectedCat && !selectedSub && !showFavorites ? (
           <ListView
             vocab={vocab}
-            onSelectWord={setSelectedWord}
+            onSelectWord={openWord}
             levelFilter={levelFilter}
             search={search}
             showSubs={showSubsInList}
@@ -391,7 +448,7 @@ export default function App() {
                       word={w}
                       isFavorite={vocab.isFavorite(w.id)}
                       onToggleFav={vocab.toggleFavorite}
-                      onClick={() => setSelectedWord(w)}
+                      onClick={() => openWord(w)}
                     />
                   ))}
                 </div>
@@ -416,10 +473,12 @@ export default function App() {
 
       {selectedWord && (
         <WordDetail
+          key={selectedWord.id}
           word={selectedWord}
           vocab={vocab}
-          onClose={() => setSelectedWord(null)}
-          onSelectWord={setSelectedWord}
+          onBack={popWord}
+          onClose={closeWords}
+          onSelectWord={pushWord}
         />
       )}
 

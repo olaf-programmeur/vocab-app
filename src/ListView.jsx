@@ -15,9 +15,15 @@ export default function ListView({
   const toggleSub = (id) =>
     setOpenSubs((p) => ({ ...p, [id]: !p[id] }));
 
+  const normalize = (s) =>
+    (s || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(new RegExp("[\\u0300-\\u036f]", "g"), "");
+
   const matchesFilter = (w) => {
     if (levelFilter && w.niveau !== levelFilter) return false;
-    if (search && !w.word.toLowerCase().includes(search.toLowerCase()))
+    if (search && !normalize(w.word).includes(normalize(search)))
       return false;
     return true;
   };

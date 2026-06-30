@@ -3,6 +3,7 @@ import WordGallery from "./WordGallery.jsx";
 export default function WordDetail({
   word,
   vocab,
+  onBack,
   onClose,
   onSelectWord,
 }) {
@@ -20,8 +21,13 @@ export default function WordDetail({
   return (
     <div className="detail-overlay" onClick={onClose}>
       <div className="detail-card" onClick={(e) => e.stopPropagation()}>
-        <button className="detail-close" onClick={onClose} aria-label="Fermer">
-          ×
+        <button
+          className="detail-close"
+          onClick={onBack}
+          aria-label="Fermer la fiche"
+          title="Fermer la fiche"
+        >
+          ←
         </button>
 
         <div className="detail-header">

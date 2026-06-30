@@ -94,6 +94,41 @@ html, body, #root {
   border: 1.5px solid var(--border);
 }
 
+.search-wrap {
+  flex: 1;
+  min-width: 200px;
+  position: relative;
+  display: flex;
+}
+
+.search-wrap .search-input {
+  width: 100%;
+  min-width: 0;
+  padding-right: 42px;
+}
+
+.search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: var(--bg2);
+  color: var(--text2);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.18s, color 0.18s;
+}
+
+.search-clear:hover { background: var(--border); color: var(--text); }
+
 .search-input {
   flex: 1;
   min-width: 200px;
@@ -1148,7 +1183,7 @@ html, body, #root {
 @media (max-width: 600px) {
   .app { padding: 16px 12px 80px; }
   .toolbar { gap: 6px; }
-  .search-input { min-width: 100%; }
+  .search-wrap { min-width: 100%; }
   .quiz-options { grid-template-columns: 1fr; }
   .detail-card { padding: 44px 20px 20px; }
   .detail-word { font-size: 1.7rem; }
