@@ -27,7 +27,20 @@ export default function WordDetail({
           aria-label="Fermer la fiche"
           title="Fermer la fiche"
         >
-          ←
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M19 12H5" />
+            <path d="M12 19l-7-7 7-7" />
+          </svg>
         </button>
 
         <div className="detail-header">
