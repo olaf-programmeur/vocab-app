@@ -168,10 +168,9 @@ function analyzeFile(workbook, vocab) {
       const wordLabel = (row.mot || "").trim();
       if (!wordLabel) return;
 
-      const niveau = (row.niveau || "A1").trim().toUpperCase();
-      if (!["A1", "A2", "B1", "B2"].includes(niveau)) {
-        result.errors.push(`Mots ligne ${lineNum} ("${wordLabel}") : niveau "${niveau}" invalide.`);
-      }
+      // Niveau libre : cellule vide = pas de niveau. Toute valeur non vide
+      // (A1, A2, B1, B2, A3, …) devient un filtre reconnu automatiquement.
+      const niveau = (row.niveau || "").trim().toUpperCase();
 
       const subIds = [];
       for (const lbl of (row.sous_categories || "").split(";")) {

@@ -84,11 +84,17 @@ export default function ListView({
                                 onClick={() => onSelectWord(w)}
                               >
                                 <span className="list-word-text">{w.word}</span>
-                                <span
-                                  className={`level-btn l${w.niveau} small`}
-                                >
-                                  {w.niveau}
-                                </span>
+                                {w.niveau && (
+                                  <span
+                                    className={`level-btn l${w.niveau} small`}
+                                    style={{
+                                      color: vocab.levelColors?.[w.niveau],
+                                      borderColor: vocab.levelColors?.[w.niveau],
+                                    }}
+                                  >
+                                    {w.niveau}
+                                  </span>
+                                )}
                               </li>
                             ))}
                           </ul>
@@ -113,9 +119,17 @@ export default function ListView({
                           onClick={() => onSelectWord(w)}
                         >
                           <span className="list-word-text">{w.word}</span>
-                          <span className={`level-btn l${w.niveau} small`}>
-                            {w.niveau}
-                          </span>
+                          {w.niveau && (
+                            <span
+                              className={`level-btn l${w.niveau} small`}
+                              style={{
+                                color: vocab.levelColors?.[w.niveau],
+                                borderColor: vocab.levelColors?.[w.niveau],
+                              }}
+                            >
+                              {w.niveau}
+                            </span>
+                          )}
                         </li>
                       ))}
                   </ul>

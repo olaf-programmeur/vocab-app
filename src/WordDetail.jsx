@@ -48,7 +48,17 @@ export default function WordDetail({
           <div className="detail-title-block">
             <h2 className="detail-word">{word.word}</h2>
             <div className="detail-meta">
-              <span className={`level-btn l${word.niveau}`}>{word.niveau}</span>
+              {word.niveau && (
+                <span
+                  className={`level-btn l${word.niveau}`}
+                  style={{
+                    color: vocab.levelColors?.[word.niveau],
+                    borderColor: vocab.levelColors?.[word.niveau],
+                  }}
+                >
+                  {word.niveau}
+                </span>
+              )}
               <button
                 className="fav-btn"
                 onClick={() => vocab.toggleFavorite(word.id)}

@@ -226,19 +226,24 @@ export default function App() {
         )}
 
         <div className="toolbar-group">
-          {["A1", "A2", "B1", "B2"].map((lvl) => (
-            <button
-              key={lvl}
-              className={`level-btn l${lvl} ${
-                levelFilter === lvl ? "active" : ""
-              }`}
-              onClick={() =>
-                setLevelFilter(levelFilter === lvl ? null : lvl)
-              }
-            >
-              {lvl}
-            </button>
-          ))}
+          {vocab.allLevels.map((lvl) => {
+            const c = vocab.levelColors[lvl];
+            const active = levelFilter === lvl;
+            return (
+              <button
+                key={lvl}
+                className={`level-btn l${lvl} ${active ? "active" : ""}`}
+                style={{
+                  color: active ? "#fff" : c,
+                  borderColor: c,
+                  background: active ? c : undefined,
+                }}
+                onClick={() => setLevelFilter(active ? null : lvl)}
+              >
+                {lvl}
+              </button>
+            );
+          })}
           {levelFilter && (
             <button className="btn-pill" onClick={() => setLevelFilter(null)}>
               ✕
@@ -449,6 +454,7 @@ export default function App() {
                       isFavorite={vocab.isFavorite(w.id)}
                       onToggleFav={vocab.toggleFavorite}
                       onClick={() => openWord(w)}
+                      levelColors={vocab.levelColors}
                     />
                   ))}
                 </div>

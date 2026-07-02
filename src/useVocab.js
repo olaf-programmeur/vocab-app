@@ -10,6 +10,27 @@ import * as XLSX from "xlsx";
 const LS_FAVS = "vocab_favorites_v2";
 const DATA_URL = "/data.xlsx";
 
+// Couleurs de référence des niveaux historiques. Tout niveau supplémentaire
+// (ex. "A3") reçoit une couleur dérivée — un dégradé éclairci à partir de la
+// couleur du niveau qui le précède dans la liste triée (voir levelColors).
+const BASE_LEVEL_COLORS = {
+  A1: "#27ae60",
+  A2: "#2980b9",
+  B1: "#8e44ad",
+  B2: "#c0392b",
+};
+// Couleur de repli si le tout premier niveau de la liste est un niveau inédit.
+const LEVEL_FALLBACK_SEED = "#7f8c8d";
+
+// Éclaircit une couleur hex en la mélangeant vers le blanc (t entre 0 et 1).
+const lightenHex = (hex, t) => {
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.round(((n >> 16) & 255) + (255 - ((n >> 16) & 255)) * t);
+  const g = Math.round(((n >> 8) & 255) + (255 - ((n >> 8) & 255)) * t);
+  const b = Math.round((n & 255) + (255 - (n & 255)) * t);
+  return "#" + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
+};
+
 const slugify = (s) =>
   (s || "")
     .toLowerCase()
@@ -178,7 +199,7 @@ function parseWorkbook(workbook) {
       words.push({
         id,
         word: wordLabel,
-        niveau: (row.niveau || "").trim() || "A1",
+        niveau: (row.niveau || "").trim().toUpperCase(),
         definition: (row.definition || "").trim(),
         exemple: (row.exemple || "").trim(),
         astuce: (row.astuce || "").trim(),
@@ -384,6 +405,28 @@ export function useVocab() {
     return Array.from(s).sort();
   }, [words]);
 
+  // Liste des niveaux réellement présents dans les données (les cellules
+  // vides ne comptent pas). Ajouter une nouvelle valeur (ex. "A3") dans le
+  // fichier suffit à faire apparaître son bouton de filtre automatiquement.
+  const allLevels = useMemo(() => {
+    const s = new Set();
+    for (const w of words) if (w.niveau) s.add(w.niveau);
+    return Array.from(s).sort();
+  }, [words]);
+
+  // Une couleur par niveau : les niveaux historiques gardent leur teinte ;
+  // chaque niveau inédit prend un dégradé éclairci de la couleur du niveau
+  // qui le précède dans la liste triée.
+  const levelColors = useMemo(() => {
+    const out = {};
+    let prev = LEVEL_FALLBACK_SEED;
+    for (const lvl of allLevels) {
+      out[lvl] = BASE_LEVEL_COLORS[lvl] || lightenHex(prev, 0.28);
+      prev = out[lvl];
+    }
+    return out;
+  }, [allLevels]);
+
   // ──────── Favoris ────────
   const toggleFavorite = useCallback((id) => {
     setFavorites((prev) =>
@@ -411,6 +454,8 @@ export function useVocab() {
     wordsByCategory,
     subcategoriesByCategory,
     allTags,
+    allLevels,
+    levelColors,
     getConnections,
     favorites,
     toggleFavorite,
