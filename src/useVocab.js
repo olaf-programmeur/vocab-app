@@ -219,6 +219,31 @@ function parseWorkbook(workbook) {
   // Format souple : chaque ligne contient un "mot pivot" en mot_1 et
   // autant de mots reliés que voulu en mot_2, mot_3, ... mot_N.
   // Les liens sont bidirectionnels donc l'ordre n'importe pas.
+  // Les cellules contiennent l'identifiant du mot (colonne id de la feuille
+  // Mots) : plusieurs mots peuvent partager le même libellé, l'identifiant
+  // est donc le seul moyen de désigner l'entrée voulue sans ambiguïté.
+  const byId = new Map(words.map((w) => [w.id.toLowerCase(), w]));
+  const resolve = (value, rowIdx, colName) => {
+    const key = value.toLowerCase();
+    const byIdHit = byId.get(key);
+    if (byIdHit) return byIdHit;
+    // Tolérance : ancien format par libellé, encore accepté mais signalé car
+    // il ne permet pas de distinguer deux mots au libellé identique.
+    const matches = words.filter((w) => w.word.toLowerCase() === key);
+    if (matches.length === 0) {
+      warnings.push(`Liens ligne ${rowIdx + 2} : ${colName} "${value}" introuvable dans la feuille Mots.`);
+      return null;
+    }
+    warnings.push(
+      matches.length > 1
+        ? `Liens ligne ${rowIdx + 2} : ${colName} "${value}" désigne ${matches.length} mots (${matches
+            .map((w) => w.id)
+            .join(", ")}) ; le lien pointe vers "${matches[0].id}". Utilisez l'identifiant voulu.`
+        : `Liens ligne ${rowIdx + 2} : ${colName} "${value}" est un libellé ; utilisez l'identifiant "${matches[0].id}".`
+    );
+    return matches[0];
+  };
+
   const wsConn = workbook.Sheets["Liens"];
   const connections = [];
   if (wsConn) {
@@ -226,11 +251,8 @@ function parseWorkbook(workbook) {
     rows.forEach((row, rowIdx) => {
       const m1 = (row.mot_1 || "").toString().trim();
       if (!m1) return;
-      const w1 = words.find((w) => w.word.toLowerCase() === m1.toLowerCase());
-      if (!w1) {
-        warnings.push(`Liens ligne ${rowIdx + 2} : mot_1 "${m1}" introuvable dans la feuille Mots.`);
-        return;
-      }
+      const w1 = resolve(m1, rowIdx, "mot_1");
+      if (!w1) return;
       // Trouver toutes les colonnes mot_N (N >= 2) dans l'ordre numérique
       const targetKeys = Object.keys(row)
         .filter((k) => /^mot_\d+$/.test(k) && k !== "mot_1")
@@ -242,11 +264,8 @@ function parseWorkbook(workbook) {
       for (const key of targetKeys) {
         const m2 = (row[key] || "").toString().trim();
         if (!m2) continue;
-        const w2 = words.find((w) => w.word.toLowerCase() === m2.toLowerCase());
-        if (!w2) {
-          warnings.push(`Liens ligne ${rowIdx + 2} : ${key} "${m2}" introuvable dans la feuille Mots.`);
-          continue;
-        }
+        const w2 = resolve(m2, rowIdx, key);
+        if (!w2) continue;
         if (w1.id === w2.id) continue; // pas de lien d'un mot avec lui-même
         connections.push({ from: w1.id, to: w2.id });
       }

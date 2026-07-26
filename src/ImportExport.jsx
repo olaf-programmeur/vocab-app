@@ -17,10 +17,17 @@ function findByLabel(label, list) {
   return list.find((x) => slugify(x.label) === norm) || null;
 }
 
-function findWordByLabel(label, words) {
-  if (!label) return null;
-  const norm = label.trim().toLowerCase();
-  return words.find((w) => w.word.toLowerCase() === norm) || null;
+// La feuille Liens désigne les mots par leur identifiant : deux mots peuvent
+// porter le même libellé, seul l'identifiant est sans ambiguïté. Le libellé
+// reste accepté pour les anciens fichiers.
+function findWordByRef(ref, words) {
+  if (!ref) return null;
+  const norm = ref.trim().toLowerCase();
+  return (
+    words.find((w) => w.id.toLowerCase() === norm) ||
+    words.find((w) => w.word.toLowerCase() === norm) ||
+    null
+  );
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -267,8 +274,8 @@ function analyzeFile(workbook, vocab) {
         result.errors.push(`Liens ligne ${lineNum} : un des deux mots est vide.`);
         return;
       }
-      const w1 = findWordByLabel(m1, wordsAfter);
-      const w2 = findWordByLabel(m2, wordsAfter);
+      const w1 = findWordByRef(m1, wordsAfter);
+      const w2 = findWordByRef(m2, wordsAfter);
       if (!w1) {
         result.errors.push(`Liens ligne ${lineNum} : mot "${m1}" introuvable.`);
         return;
