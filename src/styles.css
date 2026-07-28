@@ -1544,6 +1544,103 @@ html, body, #root {
   margin-bottom: 6px;
 }
 
+/* La question du moment : c'est le seul élément que la personne doit lire,
+   donc elle est grande et colorée. */
+.facet-question {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--accent, #4472c4);
+  margin-bottom: 12px;
+}
+
+/* Réponses déjà données : compactes, et on peut les défaire d'un toucher. */
+.facet-repondus {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.facet-repondu {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--accent, #4472c4);
+  background: var(--accent, #4472c4);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.facet-repondu-q {
+  opacity: 0.75;
+  font-size: 0.8rem;
+}
+
+.facet-repondu-v {
+  font-weight: 600;
+}
+
+/* Écran « Mes listes » : de grandes cartes, une par liste. */
+.listes-choix {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.liste-carte {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 88px;
+  min-width: 160px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.liste-carte.active {
+  border-color: var(--accent, #4472c4);
+  border-width: 2px;
+}
+
+.liste-icone {
+  font-size: 1.6rem;
+}
+
+.liste-label {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.liste-compte {
+  font-size: 0.85rem;
+  color: var(--text2);
+}
+
+.facet-autre {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: none;
+  background: none;
+  color: var(--text2);
+  font-family: inherit;
+  font-size: 0.92rem;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
 .facet-values {
   display: flex;
   flex-wrap: wrap;

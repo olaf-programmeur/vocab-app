@@ -11,6 +11,13 @@ import Quiz from "./Quiz.jsx";
 import ImportExport from "./ImportExport.jsx";
 import "./styles.css";
 
+const MODES = [
+  { id: "trouver", icone: "🔎", label: "Trouver", titre: "Trouver un mot en répondant à des questions" },
+  { id: "cartes", icone: "🟦", label: "Cartes", titre: "Parcourir les images par thème" },
+  { id: "liste", icone: "📋", label: "Liste", titre: "Parcourir la liste des thèmes" },
+  { id: "listes", icone: "⭐", label: "Mes listes", titre: "Ouvrir une liste toute faite" },
+];
+
 export default function App() {
   const vocab = useVocab();
   const admin = useAdmin();
@@ -31,7 +38,18 @@ export default function App() {
   const closeWords = () => setWordStack([]);                  // tout fermer (clic en dehors)
 
   // UI
-  const [viewMode, setViewMode] = useState("grid");
+  const [mode, setMode] = useState("cartes");
+  const changerMode = (m) => {
+    setMode(m);
+    // Changer d'écran remet le contexte à zéro : sans cela on se retrouve
+    // dans une liste filtrée par une question posée sur un autre écran.
+    setSelectedCat(null);
+    setSelectedSub(null);
+    setShowFavorites(false);
+    setActiveList(null);
+    setFacets({});
+  };
+  const viewMode = mode === "liste" ? "list" : "grid";
   const [showSubsInList, setShowSubsInList] = useState(true);
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState(null);
@@ -265,24 +283,23 @@ export default function App() {
           )}
         </div>
 
-        <div className="toolbar-group">
-          <button
-            className={`btn-pill ${viewMode === "grid" ? "active" : ""}`}
-            onClick={() => setViewMode("grid")}
-            title="Affichage cartes"
-          >
-            🟦 Cartes
-          </button>
-          <button
-            className={`btn-pill ${viewMode === "list" ? "active" : ""}`}
-            onClick={() => setViewMode("list")}
-            title="Affichage liste"
-          >
-            📋 Liste
-          </button>
+        {/* Quatre façons d'arriver au mot, séparées : chercher en répondant à
+            des questions, parcourir les images, parcourir l'arborescence, ou
+            ouvrir une liste toute faite. Chacune a son écran. */}
+        <div className="toolbar-group modes">
+          {MODES.map((m) => (
+            <button
+              key={m.id}
+              className={`btn-pill${mode === m.id ? " active" : ""}`}
+              onClick={() => changerMode(m.id)}
+              title={m.titre}
+            >
+              {m.icone} {m.label}
+            </button>
+          ))}
         </div>
 
-        {viewMode === "list" && (
+        {mode === "liste" && (
           <label className="list-toggle">
             <input
               type="checkbox"
@@ -292,24 +309,6 @@ export default function App() {
             <span>Sous-cat.</span>
           </label>
         )}
-
-        {/* Listes d'accès rapide : un bouton, un résultat. */}
-        <div className="toolbar-group">
-          {(vocab.lists || []).map((l) => (
-            <button
-              key={l.id}
-              className={`btn-pill${activeList === l.id ? " active" : ""}`}
-              onClick={() => {
-                setActiveList(activeList === l.id ? null : l.id);
-                setSelectedCat(null);
-                setSelectedSub(null);
-                setShowFavorites(false);
-              }}
-            >
-              {l.icon} {l.label}
-            </button>
-          ))}
-        </div>
 
         <div className="toolbar-group">
           {vocab.allLevels.map((lvl) => {
@@ -373,15 +372,41 @@ export default function App() {
         )}
       </div>
 
-      <FacetBar
-        familles={facetFamilies}
-        pool={facetPool}
-        actifs={facets}
-        onToggle={toggleFacet}
-        wordById={vocab.wordById}
-      />
+      {/* Les questions n'apparaissent que sur l'écran « Trouver » : ailleurs,
+          elles s'interposaient entre la personne et les images. */}
+      {mode === "trouver" && (
+        <FacetBar
+          familles={facetFamilies}
+          pool={facetPool}
+          actifs={facets}
+          onToggle={toggleFacet}
+          wordById={vocab.wordById}
+        />
+      )}
 
-      {hasFacets && (
+      {mode === "listes" && (
+        <div className="listes-choix">
+          {(vocab.lists || []).map((l) => (
+            <button
+              key={l.id}
+              className={`liste-carte${activeList === l.id ? " active" : ""}`}
+              onClick={() => setActiveList(activeList === l.id ? null : l.id)}
+            >
+              <span className="liste-icone">{l.icon}</span>
+              <span className="liste-label">{l.label}</span>
+              <span className="liste-compte">{l.wordIds.length} mots</span>
+            </button>
+          ))}
+          {(vocab.lists || []).length === 0 && (
+            <div className="empty-state">
+              Aucune liste pour l'instant. Elles se créent dans la feuille
+              « Listes » du fichier de données.
+            </div>
+          )}
+        </div>
+      )}
+
+      {mode === "trouver" && hasFacets && (
         <div className="facet-active">
           <button className="crumb" onClick={() => setFacets({})}>
             ✕ Tout afficher
@@ -435,7 +460,7 @@ export default function App() {
           />
         ) : (
           <>
-            {!selectedCat && !showFavorites && !search && !levelFilter && !hasFacets && !activeList && (
+            {mode === "cartes" && !selectedCat && !showFavorites && !search && !levelFilter && (
               <div className="cat-grid">
                 {vocab.categories.map((cat) => {
                   const subs = vocab.subcategoriesByCategory.get(cat.id) || [];
