@@ -1,6 +1,6 @@
 import WordImage from "./WordImage.jsx";
 
-export default function WordTile({ word, isFavorite, onToggleFav, onClick, levelColors = {} }) {
+export default function WordTile({ word, isFavorite, onToggleFav, onClick }) {
   return (
     <div
       className="word-tile"
@@ -20,17 +20,6 @@ export default function WordTile({ word, isFavorite, onToggleFav, onClick, level
       <WordImage url={word.url} search={word.search} size={218} />
       <div className="tile-footer">
         <span className="tile-word">{word.word}</span>
-        {word.niveau && (
-          <span
-            className={`level-btn l${word.niveau}`}
-            style={{
-              color: levelColors[word.niveau],
-              borderColor: levelColors[word.niveau],
-            }}
-          >
-            {word.niveau}
-          </span>
-        )}
       </div>
     </div>
   );

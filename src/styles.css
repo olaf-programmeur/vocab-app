@@ -816,6 +816,9 @@ html, body, #root {
   gap: 16px;
 }
 
+/* Défilement volontaire, jamais automatique : reconnaître une image demande
+   un effort, et une image qui bouge toute seule entre en concurrence avec
+   cet effort. La personne donne le rythme. */
 .gallery-arrow {
   width: 38px;
   height: 38px;

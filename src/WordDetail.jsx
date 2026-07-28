@@ -13,14 +13,8 @@ export default function WordDetail({
   const isFav = vocab.isFavorite(word.id);
   const { supported: voixDispo, lire } = useSpeech();
 
-  // Les phrases viennent de la feuille « Phrases » (une par ligne). L'ancienne
-  // colonne « exemple » reste acceptée tant qu'elle n'est pas vidée.
-  const phrases =
-    word.phrases && word.phrases.length > 0
-      ? word.phrases
-      : word.exemple
-      ? [{ type: "exemple", texte: word.exemple }]
-      : [];
+  // Les phrases viennent toutes de la feuille « Phrases ».
+  const phrases = word.phrases || [];
 
   // Catégories d'appartenance (lisibles)
   const subcatLabels = (word.subcategoryIds || [])
@@ -70,17 +64,6 @@ export default function WordDetail({
               </div>
             )}
             <div className="detail-meta">
-              {word.niveau && (
-                <span
-                  className={`level-btn l${word.niveau}`}
-                  style={{
-                    color: vocab.levelColors?.[word.niveau],
-                    borderColor: vocab.levelColors?.[word.niveau],
-                  }}
-                >
-                  {word.niveau}
-                </span>
-              )}
               <button
                 className="fav-btn"
                 onClick={() => vocab.toggleFavorite(word.id)}

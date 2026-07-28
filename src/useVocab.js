@@ -10,27 +10,6 @@ import * as XLSX from "xlsx";
 const LS_FAVS = "vocab_favorites_v2";
 const DATA_URL = "/data.xlsx";
 
-// Couleurs de référence des niveaux historiques. Tout niveau supplémentaire
-// (ex. "A3") reçoit une couleur dérivée — un dégradé éclairci à partir de la
-// couleur du niveau qui le précède dans la liste triée (voir levelColors).
-const BASE_LEVEL_COLORS = {
-  A1: "#27ae60",
-  A2: "#2980b9",
-  B1: "#8e44ad",
-  B2: "#c0392b",
-};
-// Couleur de repli si le tout premier niveau de la liste est un niveau inédit.
-const LEVEL_FALLBACK_SEED = "#7f8c8d";
-
-// Éclaircit une couleur hex en la mélangeant vers le blanc (t entre 0 et 1).
-const lightenHex = (hex, t) => {
-  const n = parseInt(hex.slice(1), 16);
-  const r = Math.round(((n >> 16) & 255) + (255 - ((n >> 16) & 255)) * t);
-  const g = Math.round(((n >> 8) & 255) + (255 - ((n >> 8) & 255)) * t);
-  const b = Math.round((n & 255) + (255 - (n & 255)) * t);
-  return "#" + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
-};
-
 const slugify = (s) =>
   (s || "")
     .toLowerCase()
@@ -135,48 +114,11 @@ function parseWorkbook(workbook) {
       if (!wordLabel) return;
       const id = (row.id || "").trim() || slugify(wordLabel);
 
-      // Sous-catégories (séparateur ; ou ,)
-      const subRaw = (row.sous_categories || "").toString();
-      const subIds = subRaw
-        .split(/[;,]/)
-        .map((s) => s.trim())
-        .filter(Boolean)
-        .map((label) => {
-          const sub = subcategories.find(
-            (s) => slugify(s.label) === slugify(label) || s.id === label
-          );
-          if (!sub) {
-            warnings.push(`Mot "${wordLabel}" : sous-catégorie "${label}" introuvable.`);
-            return null;
-          }
-          return sub.id;
-        })
-        .filter(Boolean);
-
-      // Catégories directes
-      const catRaw = (row.categories_directes || "").toString();
-      const catIds = catRaw
-        .split(/[;,]/)
-        .map((s) => s.trim())
-        .filter(Boolean)
-        .map((label) => {
-          const cat = categories.find(
-            (c) => slugify(c.label) === slugify(label) || c.id === label
-          );
-          if (!cat) {
-            warnings.push(`Mot "${wordLabel}" : catégorie "${label}" introuvable.`);
-            return null;
-          }
-          return cat.id;
-        })
-        .filter(Boolean);
-
-      // Tags
-      const tagRaw = (row.tags || "").toString();
-      const tags = tagRaw
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean);
+      // Le rattachement aux (sous-)catégories vient de la feuille
+      // « Classement », et les tags de la feuille « Tags » : les colonnes
+      // correspondantes ont été retirées de « Mots » (elles désignaient les
+      // catégories par leur libellé, ce qui se trompait de cible dès que
+      // deux libellés se ressemblaient).
 
       // Images : colonne principale "image_url" + colonnes optionnelles
       // "image_url_2", "image_url_3", … (dans l'ordre numérique).
@@ -203,16 +145,14 @@ function parseWorkbook(workbook) {
         synonyms: [],
         phrases: [],
         facets: {},
-        niveau: (row.niveau || "").trim().toUpperCase(),
         definition: (row.definition || "").trim(),
-        exemple: (row.exemple || "").trim(),
         astuce: (row.astuce || "").trim(),
         url: imageUrls[0] || null,
         urls: imageUrls,
         search: (row.image_recherche || "").trim() || wordLabel,
-        tags,
-        subcategoryIds: subIds,
-        categoryIds: catIds,
+        tags: [],
+        subcategoryIds: [],
+        categoryIds: [],
       });
     });
   } else {
@@ -567,27 +507,9 @@ export function useVocab() {
     return Array.from(s).sort();
   }, [words]);
 
-  // Liste des niveaux réellement présents dans les données (les cellules
-  // vides ne comptent pas). Ajouter une nouvelle valeur (ex. "A3") dans le
-  // fichier suffit à faire apparaître son bouton de filtre automatiquement.
-  const allLevels = useMemo(() => {
-    const s = new Set();
-    for (const w of words) if (w.niveau) s.add(w.niveau);
-    return Array.from(s).sort();
-  }, [words]);
-
-  // Une couleur par niveau : les niveaux historiques gardent leur teinte ;
-  // chaque niveau inédit prend un dégradé éclairci de la couleur du niveau
-  // qui le précède dans la liste triée.
-  const levelColors = useMemo(() => {
-    const out = {};
-    let prev = LEVEL_FALLBACK_SEED;
-    for (const lvl of allLevels) {
-      out[lvl] = BASE_LEVEL_COLORS[lvl] || lightenHex(prev, 0.28);
-      prev = out[lvl];
-    }
-    return out;
-  }, [allLevels]);
+  // La colonne « niveau » a été retirée : elle ne servait plus de niveau mais
+  // de liste d'accès rapide aux visages, ce que la feuille « Listes » fait
+  // désormais mieux.
 
   // ──────── Favoris ────────
   const toggleFavorite = useCallback((id) => {
@@ -619,8 +541,6 @@ export function useVocab() {
     wordsByCategory,
     subcategoriesByCategory,
     allTags,
-    allLevels,
-    levelColors,
     getConnections,
     favorites,
     toggleFavorite,

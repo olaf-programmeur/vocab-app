@@ -3,7 +3,6 @@ import { useState } from "react";
 export default function ListView({
   vocab,
   onSelectWord,
-  levelFilter,
   search,
   showSubs = true,
 }) {
@@ -22,7 +21,6 @@ export default function ListView({
       .replace(new RegExp("[\\u0300-\\u036f]", "g"), "");
 
   const matchesFilter = (w) => {
-    if (levelFilter && w.niveau !== levelFilter) return false;
     if (search && !normalize(w.word).includes(normalize(search)))
       return false;
     return true;
@@ -84,17 +82,6 @@ export default function ListView({
                                 onClick={() => onSelectWord(w)}
                               >
                                 <span className="list-word-text">{w.word}</span>
-                                {w.niveau && (
-                                  <span
-                                    className={`level-btn l${w.niveau} small`}
-                                    style={{
-                                      color: vocab.levelColors?.[w.niveau],
-                                      borderColor: vocab.levelColors?.[w.niveau],
-                                    }}
-                                  >
-                                    {w.niveau}
-                                  </span>
-                                )}
                               </li>
                             ))}
                           </ul>
@@ -119,17 +106,6 @@ export default function ListView({
                           onClick={() => onSelectWord(w)}
                         >
                           <span className="list-word-text">{w.word}</span>
-                          {w.niveau && (
-                            <span
-                              className={`level-btn l${w.niveau} small`}
-                              style={{
-                                color: vocab.levelColors?.[w.niveau],
-                                borderColor: vocab.levelColors?.[w.niveau],
-                              }}
-                            >
-                              {w.niveau}
-                            </span>
-                          )}
                         </li>
                       ))}
                   </ul>

@@ -52,7 +52,6 @@ export default function App() {
   const viewMode = mode === "liste" ? "list" : "grid";
   const [showSubsInList, setShowSubsInList] = useState(true);
   const [search, setSearch] = useState("");
-  const [levelFilter, setLevelFilter] = useState(null);
   const [showFavorites, setShowFavorites] = useState(false);
   // Un axe = une famille de tags ; au plus une valeur choisie par axe.
   const [facets, setFacets] = useState({});
@@ -86,7 +85,6 @@ export default function App() {
   };
 
   const matchesFilter = (w) => {
-    if (levelFilter && w.niveau !== levelFilter) return false;
     for (const [famille, valeur] of Object.entries(facets)) {
       const vals = famille === "nature" ? [w.nature] : (w.facets && w.facets[famille]) || [];
       if (!vals.includes(valeur)) return false;
@@ -140,7 +138,7 @@ export default function App() {
       result = (vocab.wordsByCategory.get(selectedCat.id) || []).filter(
         matchesFilter
       );
-    } else if (search || levelFilter || hasFacets) {
+    } else if (search || hasFacets) {
       result = vocab.words.filter(matchesFilter);
     } else {
       return [];
@@ -151,7 +149,6 @@ export default function App() {
     selectedSub,
     selectedCat,
     search,
-    levelFilter,
     facets,
     activeList,
     showFavorites,
@@ -190,13 +187,12 @@ export default function App() {
       : vocab.words;
     const q = search ? normalize(search.trim()) : "";
     return base.filter((w) => {
-      if (levelFilter && w.niveau !== levelFilter) return false;
-      if (showFavorites && !vocab.isFavorite(w.id)) return false;
+        if (showFavorites && !vocab.isFavorite(w.id)) return false;
       if (q && trouveDans(w, q) === undefined) return false;
       return true;
     });
   }, [
-    selectedSub, selectedCat, search, levelFilter, showFavorites, activeList,
+    selectedSub, selectedCat, search, showFavorites, activeList,
     vocab.words, vocab.wordsBySubcategory, vocab.wordsByCategory,
     vocab.lists, vocab.wordById, vocab.favorites,
   ]);
@@ -309,32 +305,6 @@ export default function App() {
             <span>Sous-cat.</span>
           </label>
         )}
-
-        <div className="toolbar-group">
-          {vocab.allLevels.map((lvl) => {
-            const c = vocab.levelColors[lvl];
-            const active = levelFilter === lvl;
-            return (
-              <button
-                key={lvl}
-                className={`level-btn l${lvl} ${active ? "active" : ""}`}
-                style={{
-                  color: active ? "#fff" : c,
-                  borderColor: c,
-                  background: active ? c : undefined,
-                }}
-                onClick={() => setLevelFilter(active ? null : lvl)}
-              >
-                {lvl}
-              </button>
-            );
-          })}
-          {levelFilter && (
-            <button className="btn-pill" onClick={() => setLevelFilter(null)}>
-              ✕
-            </button>
-          )}
-        </div>
 
         <button
           className={`btn-pill ${showFavorites ? "active" : ""}`}
@@ -454,13 +424,12 @@ export default function App() {
           <ListView
             vocab={vocab}
             onSelectWord={openWord}
-            levelFilter={levelFilter}
             search={search}
             showSubs={showSubsInList}
           />
         ) : (
           <>
-            {mode === "cartes" && !selectedCat && !showFavorites && !search && !levelFilter && (
+            {mode === "cartes" && !selectedCat && !showFavorites && !search && (
               <div className="cat-grid">
                 {vocab.categories.map((cat) => {
                   const subs = vocab.subcategoriesByCategory.get(cat.id) || [];
@@ -560,7 +529,7 @@ export default function App() {
             )}
 
             {visibleWords.length > 0 &&
-              !(selectedCat && !selectedSub && subsOfSelectedCat.length > 0 && !search && !levelFilter && !hasFacets) && (
+              !(selectedCat && !selectedSub && subsOfSelectedCat.length > 0 && !search && !hasFacets) && (
                 <div className="word-grid">
                   {visibleWords.map((w, i) => (
                     <WordTile
@@ -569,13 +538,12 @@ export default function App() {
                       isFavorite={vocab.isFavorite(w.id)}
                       onToggleFav={vocab.toggleFavorite}
                       onClick={() => openWord(w)}
-                      levelColors={vocab.levelColors}
                     />
                   ))}
                 </div>
               )}
 
-            {(search || levelFilter || hasFacets || showFavorites) &&
+            {(search || hasFacets || showFavorites) &&
               visibleWords.length === 0 &&
               !selectedCat && (
                 <div className="empty-state">
