@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import WordImage from "./WordImage.jsx";
+import WordImage, { estVideo } from "./WordImage.jsx";
 
 // Galerie d'images d'un mot : on balaie de gauche à droite (doigt sur
 // tablette/téléphone, ou glisser à la souris) pour changer d'image.
@@ -56,16 +56,34 @@ export default function WordGallery({ urls = [], search, size = 220 }) {
             transition: dragging ? "none" : "transform 0.25s ease",
           }}
         >
-          {list.map((u, i) => (
-            <img
-              key={i}
-              src={u}
-              alt={`${search || ""} ${i + 1}/${list.length}`}
-              draggable={false}
-              className="gallery-img"
-              style={{ width: "100%", height: "100%" }}
-            />
-          ))}
+          {list.map((u, i) =>
+            // Une vidéo courte peut remplacer une photo — utile pour les
+            // verbes, qu'une image fixe rend ambigus. On ne joue que celle
+            // qui est affichée, pour ne pas charger tout le carrousel.
+            estVideo(u) ? (
+              <video
+                key={i}
+                src={u}
+                className="gallery-img"
+                style={{ width: "100%", height: "100%" }}
+                autoPlay={i === index}
+                loop
+                muted
+                playsInline
+                preload={i === index ? "auto" : "none"}
+                aria-label={`${search || ""} ${i + 1}/${list.length}`}
+              />
+            ) : (
+              <img
+                key={i}
+                src={u}
+                alt={`${search || ""} ${i + 1}/${list.length}`}
+                draggable={false}
+                className="gallery-img"
+                style={{ width: "100%", height: "100%" }}
+              />
+            )
+          )}
         </div>
       </div>
 

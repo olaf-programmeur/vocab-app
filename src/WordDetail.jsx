@@ -1,4 +1,6 @@
 import WordGallery from "./WordGallery.jsx";
+import SpeakButton from "./SpeakButton.jsx";
+import { useSpeech } from "./useSpeech.js";
 
 export default function WordDetail({
   word,
@@ -9,6 +11,16 @@ export default function WordDetail({
 }) {
   const connections = vocab.getConnections(word.id);
   const isFav = vocab.isFavorite(word.id);
+  const { supported: voixDispo, lire } = useSpeech();
+
+  // Les phrases viennent de la feuille « Phrases » (une par ligne). L'ancienne
+  // colonne « exemple » reste acceptée tant qu'elle n'est pas vidée.
+  const phrases =
+    word.phrases && word.phrases.length > 0
+      ? word.phrases
+      : word.exemple
+      ? [{ type: "exemple", texte: word.exemple }]
+      : [];
 
   // Catégories d'appartenance (lisibles)
   const subcatLabels = (word.subcategoryIds || [])
@@ -47,6 +59,16 @@ export default function WordDetail({
           <WordGallery urls={word.urls} search={word.search} size={280} />
           <div className="detail-title-block">
             <h2 className="detail-word">{word.word}</h2>
+            {voixDispo && (
+              <div className="detail-ecoute">
+                <SpeakButton
+                  texte={word.word}
+                  lire={lire}
+                  grand
+                  titre={`Écouter « ${word.word} »`}
+                />
+              </div>
+            )}
             <div className="detail-meta">
               {word.niveau && (
                 <span
@@ -92,25 +114,8 @@ export default function WordDetail({
           </div>
         </div>
 
-        {word.definition && (
-          <div className="detail-section">
-            <h3>Définition</h3>
-            <p>{word.definition}</p>
-          </div>
-        )}
-        {word.exemple && (
-          <div className="detail-section">
-            <h3>Exemple</h3>
-            <p style={{ fontStyle: "italic" }}>« {word.exemple} »</p>
-          </div>
-        )}
-        {word.astuce && (
-          <div className="detail-section">
-            <h3>💡 Astuce</h3>
-            <p>{word.astuce}</p>
-          </div>
-        )}
-
+        {/* Les mots reliés servent à circuler : ils passent avant le reste et
+            ne sont jamais repliés. */}
         {connections.length > 0 && (
           <div className="detail-section">
             <h3>🔗 Mots reliés</h3>
@@ -126,6 +131,52 @@ export default function WordDetail({
               ))}
             </div>
           </div>
+        )}
+
+        {/* Un bloc distinct par phrase : deux exemples ne doivent jamais se
+            lire comme une seule phrase. */}
+        {phrases.length > 0 && (
+          <div className="detail-section">
+            <h3>{phrases.some((p) => p.type === "expression") ? "Exemples et expressions" : "Exemples"}</h3>
+            <div className="phrases">
+              {phrases.map((p, i) => (
+                <div key={i} className={`phrase phrase-${p.type}`}>
+                  <span>{p.texte}</span>
+                  {voixDispo && <SpeakButton texte={p.texte} lire={lire} titre="Écouter la phrase" />}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {word.synonyms && word.synonyms.length > 0 && (
+          <div className="detail-section">
+            <h3>On dit aussi</h3>
+            <div className="connections">
+              {word.synonyms.map((s) => (
+                <span key={s} className="synonym-chip">{s}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Replié par défaut : utile surtout à l'accompagnant. */}
+        {word.definition && (
+          <details className="detail-fold">
+            <summary>Voir la définition</summary>
+            <p>
+              {word.definition}
+              {voixDispo && (
+                <SpeakButton texte={word.definition} lire={lire} titre="Écouter la définition" />
+              )}
+            </p>
+          </details>
+        )}
+        {word.astuce && (
+          <details className="detail-fold">
+            <summary>💡 Voir l'astuce</summary>
+            <p>{word.astuce}</p>
+          </details>
         )}
 
       </div>

@@ -89,17 +89,34 @@ export default function WordImage({ url: customUrl, search, size = 120 }) {
     );
   }
 
-  return (
-    <img
-      src={url}
-      alt={search}
-      style={{
-        width: `min(${size}px, 100%)`,
-        aspectRatio: "1 / 1",
-        objectFit: "cover",
-        borderRadius: 12,
-        display: "block",
-      }}
-    />
-  );
+  const style = {
+    width: `min(${size}px, 100%)`,
+    aspectRatio: "1 / 1",
+    objectFit: "cover",
+    borderRadius: 12,
+    display: "block",
+  };
+
+  // Une courte vidéo dit bien mieux qu'une image fixe ce qu'est « verser »
+  // ou « se détendre ». On la joue en boucle, muette et sans commande :
+  // « playsInline » est indispensable, sans quoi iOS bascule en plein écran.
+  if (estVideo(url)) {
+    return (
+      <video
+        src={url}
+        style={style}
+        autoPlay
+        loop
+        muted
+        playsInline
+        aria-label={search}
+      />
+    );
+  }
+
+  return <img src={url} alt={search} style={style} />;
+}
+
+export function estVideo(url) {
+  return /\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(url || "");
 }

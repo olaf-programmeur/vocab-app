@@ -1413,3 +1413,190 @@ html, body, #root {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", monospace;
   font-size: 0.9em;
 }
+
+
+/* ── Écouter ──
+   La compréhension orale résiste souvent mieux que la lecture : le bouton
+   du mot est volontairement large et bien visible. */
+.speak-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text2);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+  flex: none;
+}
+
+.speak-btn:hover,
+.speak-btn:active {
+  border-color: var(--accent, #4472c4);
+  color: var(--accent, #4472c4);
+}
+
+.speak-btn.grand {
+  padding: 0 20px;
+  min-height: 52px;
+  font-size: 1.05rem;
+  border-width: 2px;
+  border-color: var(--accent, #4472c4);
+  color: var(--accent, #4472c4);
+}
+
+.detail-ecoute {
+  margin: 10px 0 4px;
+}
+
+/* ── Fiche du mot ── */
+.phrases {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.phrase {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding: 12px 14px;
+  background: var(--bg);
+  border-left: 3px solid var(--border);
+  border-radius: 0 8px 8px 0;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.phrase-expression {
+  font-style: normal;
+  border-left-color: var(--accent, #4472c4);
+}
+
+.synonym-chip {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: var(--bg);
+  border: 1px dashed var(--border);
+  color: var(--text2);
+  font-size: 0.9rem;
+}
+
+/* Repli : cible tactile large, libellé explicite plutôt qu'un simple « + ». */
+.detail-fold {
+  margin-top: 14px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
+.detail-fold > summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--text2);
+  font-size: 0.95rem;
+  list-style: none;
+}
+
+.detail-fold > summary::before {
+  content: "▸";
+  margin-right: 8px;
+}
+
+.detail-fold[open] > summary::before {
+  content: "▾";
+}
+
+.detail-fold > p {
+  margin: 4px 0 0;
+  line-height: 1.6;
+}
+
+/* ── Navigation par axes ──
+   Chaque axe est une question ; un axe ne s'affiche que s'il découpe
+   réellement ce qui est à l'écran (voir FacetBar.jsx). Cibles tactiles
+   généreuses : l'application s'utilise au doigt sur téléphone. */
+.facet-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.facet-title {
+  font-size: 0.78rem;
+  color: var(--text2);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.facet-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.facet-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border-radius: 22px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.95rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.facet-chip:hover {
+  border-color: var(--accent, #4472c4);
+}
+
+.facet-chip.active {
+  background: var(--accent, #4472c4);
+  border-color: var(--accent, #4472c4);
+  color: #fff;
+}
+
+.facet-vignette {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: #fff;
+  flex: none;
+}
+
+.facet-count {
+  font-size: 0.78rem;
+  opacity: 0.65;
+}
+
+.facet-active {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.facet-active-count {
+  font-size: 0.85rem;
+  color: var(--text2);
+}

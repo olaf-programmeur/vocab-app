@@ -12,6 +12,14 @@ dist
 dist-ssr
 *.local
 
+# Sauvegardes locales de data.xlsx : utiles sur le poste, inutiles dans le dépôt
+# (et Git les conserverait indéfiniment).
+public/*.backup*
+public/*.bak*
+public/data.backup_*
+public/data_backup_*
+public/_*.py
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

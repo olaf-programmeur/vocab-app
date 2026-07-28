@@ -199,6 +199,10 @@ function parseWorkbook(workbook) {
       words.push({
         id,
         word: wordLabel,
+        nature: (row.nature || "").toString().trim(),
+        synonyms: [],
+        phrases: [],
+        facets: {},
         niveau: (row.niveau || "").trim().toUpperCase(),
         definition: (row.definition || "").trim(),
         exemple: (row.exemple || "").trim(),
@@ -272,7 +276,140 @@ function parseWorkbook(workbook) {
     });
   }
 
-  return { categories, subcategories, words, connections, errors, warnings };
+  // ─── FEUILLES SATELLITES ───
+  // Une valeur par mot vit dans « Mots » ; tout ce qui est multiple vit dans
+  // sa propre feuille, reliée par l'identifiant du mot.
+  const lignes = (nom) => {
+    const ws = workbook.Sheets[nom];
+    return ws ? XLSX.utils.sheet_to_json(ws, { defval: "" }) : [];
+  };
+  const texte = (v) => (v == null ? "" : v.toString().trim());
+  // Les feuilles satellites ont une ligne par mot et une colonne par valeur
+  // (classement_1, lieu_2, exemple_3…). On lit donc toutes les colonnes dont
+  // le nom commence par le préfixe voulu, dans l'ordre.
+  const colonnes = (row, prefixe) =>
+    Object.keys(row)
+      .filter((k) => k === prefixe || new RegExp(`^${prefixe}_\\d+$`).test(k))
+      .sort((a, b) => (parseInt(a.split("_").pop(), 10) || 0) - (parseInt(b.split("_").pop(), 10) || 0))
+      .map((k) => texte(row[k]))
+      .filter(Boolean);
+
+  // Classement : appartenance aux (sous-)catégories, par identifiant
+  const lignesClassement = lignes("Classement");
+  if (lignesClassement.length > 0) {
+    const subIds = new Set(subcategories.map((s) => s.id));
+    const catIds = new Set(categories.map((c) => c.id));
+    for (const w of words) {
+      w.subcategoryIds = [];
+      w.categoryIds = [];
+    }
+    lignesClassement.forEach((row, idx) => {
+      const w = byId.get(texte(row.id_mot).toLowerCase());
+      if (!w) return;
+      for (const cible of colonnes(row, "classement")) {
+        if (subIds.has(cible)) {
+          if (!w.subcategoryIds.includes(cible)) w.subcategoryIds.push(cible);
+        } else if (catIds.has(cible)) {
+          if (!w.categoryIds.includes(cible)) w.categoryIds.push(cible);
+        } else {
+          warnings.push(`Classement ligne ${idx + 2} : « ${cible} » n'est ni une catégorie ni une sous-catégorie.`);
+        }
+      }
+    });
+  }
+
+  // Tags : une colonne par famille (lieu_1, action_2…), la famille se lit
+  // dans le nom de la colonne.
+  for (const row of lignes("Tags")) {
+    const w = byId.get(texte(row.id_mot).toLowerCase());
+    if (!w) continue;
+    for (const cle of Object.keys(row)) {
+      if (cle === "id_mot" || cle.startsWith("mot")) continue;
+      const tag = texte(row[cle]);
+      if (!tag) continue;
+      const famille = cle.replace(/_\d+$/, "");
+      if (!w.facets[famille]) w.facets[famille] = [];
+      if (!w.facets[famille].includes(tag)) w.facets[famille].push(tag);
+      if (!w.tags.includes(tag)) w.tags.push(tag);
+    }
+  }
+
+  // Synonymes : alias de recherche, jamais des entrées distinctes
+  for (const row of lignes("Synonymes")) {
+    const w = byId.get(texte(row.id_mot).toLowerCase());
+    if (!w) continue;
+    for (const s of colonnes(row, "synonyme")) {
+      if (!w.synonyms.includes(s)) w.synonyms.push(s);
+    }
+  }
+
+  // Phrases : les exemples d'abord, puis les expressions
+  for (const row of lignes("Phrases")) {
+    const w = byId.get(texte(row.id_mot).toLowerCase());
+    if (!w) continue;
+    for (const t of colonnes(row, "exemple")) w.phrases.push({ type: "exemple", texte: t });
+    for (const t of colonnes(row, "expression")) w.phrases.push({ type: "expression", texte: t });
+  }
+
+  // Listes d'accès rapide
+  const listesRef = lignes("Listes_ref")
+    .filter((r) => texte(r.id_liste))
+    .map((r) => ({
+      id: texte(r.id_liste),
+      label: texte(r.libellé) || texte(r.libelle) || texte(r.id_liste),
+      icon: texte(r.icône) || texte(r.icone),
+      order: Number(r.ordre) || 0,
+      wordIds: [],
+    }))
+    .sort((a, b) => a.order - b.order);
+  // Listes : une ligne par mot, une colonne par liste d'appartenance.
+  const listeById = new Map(listesRef.map((l) => [l.id, l]));
+  for (const row of lignes("Listes")) {
+    const w = byId.get(texte(row.id_mot).toLowerCase());
+    if (!w) continue;
+    for (const idListe of colonnes(row, "liste")) {
+      const l = listeById.get(idListe);
+      if (l && !l.wordIds.includes(w.id)) l.wordIds.push(w.id);
+    }
+  }
+  const lists = listesRef.filter((l) => l.wordIds.length > 0);
+
+  // Références : familles de tags et natures, pour piloter l'interface
+  const tagFamilies = [];
+  const parFamille = new Map();
+  for (const row of lignes("Tags_liste")) {
+    const famille = texte(row.famille);
+    const tag = texte(row.tag);
+    if (!famille || !tag) continue;
+    if (!parFamille.has(famille)) {
+      const f = { id: famille, tags: [] };
+      parFamille.set(famille, f);
+      tagFamilies.push(f);
+    }
+    parFamille.get(famille).tags.push({
+      id: tag,
+      label: texte(row.libellé) || texte(row.libelle) || tag,
+      order: Number(row.ordre) || 0,
+      // « ancre » : le mot dont l'image illustre la tuile de cet axe.
+      anchor: texte(row.ancre) || null,
+    });
+  }
+  for (const f of tagFamilies) f.tags.sort((a, b) => a.order - b.order);
+
+  const natures = lignes("Natures")
+    .filter((r) => texte(r.nature))
+    .map((r) => ({
+      id: texte(r.nature),
+      label: texte(r.libellé) || texte(r.libelle) || texte(r.nature),
+      order: Number(r.ordre) || 0,
+    }))
+    .sort((a, b) => a.order - b.order);
+
+  return {
+    categories, subcategories, words, connections,
+    lists, tagFamilies, natures,
+    errors, warnings,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -284,6 +421,9 @@ export function useVocab() {
     subcategories: [],
     words: [],
     connections: [],
+    lists: [],
+    tagFamilies: [],
+    natures: [],
     loading: true,
     error: null,
   });
@@ -323,6 +463,9 @@ export function useVocab() {
           subcategories: parsed.subcategories,
           words: parsed.words,
           connections: parsed.connections,
+          lists: parsed.lists || [],
+          tagFamilies: parsed.tagFamilies || [],
+          natures: parsed.natures || [],
           loading: false,
           error: parsed.errors.length > 0 ? parsed.errors.join(" / ") : null,
         });
@@ -466,6 +609,9 @@ export function useVocab() {
     subcategories: data.subcategories,
     words: data.words,
     connections: data.connections,
+    lists: data.lists,
+    tagFamilies: data.tagFamilies,
+    natures: data.natures,
     wordById,
     categoryById,
     subcategoryById,

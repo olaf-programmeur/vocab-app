@@ -6,6 +6,7 @@ import WordImage from "./WordImage.jsx";
 import WordTile from "./WordTile.jsx";
 import WordDetail from "./WordDetail.jsx";
 import ListView from "./ListView.jsx";
+import FacetBar, { ORDRE } from "./FacetBar.jsx";
 import Quiz from "./Quiz.jsx";
 import ImportExport from "./ImportExport.jsx";
 import "./styles.css";
@@ -35,7 +36,17 @@ export default function App() {
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState(null);
   const [showFavorites, setShowFavorites] = useState(false);
-  const [tagFilter, setTagFilter] = useState(null);
+  // Un axe = une famille de tags ; au plus une valeur choisie par axe.
+  const [facets, setFacets] = useState({});
+  const toggleFacet = (famille, valeur) =>
+    setFacets((p) => {
+      const n = { ...p };
+      if (n[famille] === valeur) delete n[famille];
+      else n[famille] = valeur;
+      return n;
+    });
+  const hasFacets = Object.keys(facets).length > 0;
+  const [activeList, setActiveList] = useState(null);
 
   // Modales
   const [quizOpen, setQuizOpen] = useState(false);
@@ -48,13 +59,23 @@ export default function App() {
       .normalize("NFD")
       .replace(new RegExp("[\\u0300-\\u036f]", "g"), "");
 
+  // La recherche porte aussi sur les synonymes : « maman » doit ramener
+  // « la mère - la maman », « laitue » doit ramener « la salade verte ».
+  const trouveDans = (w, q) => {
+    if (normalize(w.word).includes(q)) return null;          // trouvé par le mot lui-même
+    const syn = (w.synonyms || []).find((s) => normalize(s).includes(q));
+    return syn || undefined;                                  // undefined = pas trouvé
+  };
+
   const matchesFilter = (w) => {
     if (levelFilter && w.niveau !== levelFilter) return false;
-    if (tagFilter && !(w.tags || []).includes(tagFilter)) return false;
+    for (const [famille, valeur] of Object.entries(facets)) {
+      const vals = famille === "nature" ? [w.nature] : (w.facets && w.facets[famille]) || [];
+      if (!vals.includes(valeur)) return false;
+    }
     if (search) {
       const q = normalize(search.trim());
-      // « contient n'importe où », en ignorant accents et majuscules
-      if (q && !normalize(w.word).includes(q)) return false;
+      if (q && trouveDans(w, q) === undefined) return false;
     }
     if (showFavorites && !vocab.isFavorite(w.id)) return false;
     return true;
@@ -85,7 +106,13 @@ export default function App() {
 
   const visibleWords = useMemo(() => {
     let result;
-    if (showFavorites) {
+    if (activeList) {
+      const l = (vocab.lists || []).find((x) => x.id === activeList);
+      result = (l ? l.wordIds : [])
+        .map((id) => vocab.wordById.get(id))
+        .filter(Boolean)
+        .filter(matchesFilter);
+    } else if (showFavorites) {
       result = vocab.words.filter(matchesFilter);
     } else if (selectedSub) {
       result = (vocab.wordsBySubcategory.get(selectedSub.id) || []).filter(
@@ -95,7 +122,7 @@ export default function App() {
       result = (vocab.wordsByCategory.get(selectedCat.id) || []).filter(
         matchesFilter
       );
-    } else if (search || levelFilter || tagFilter) {
+    } else if (search || levelFilter || hasFacets) {
       result = vocab.words.filter(matchesFilter);
     } else {
       return [];
@@ -107,12 +134,53 @@ export default function App() {
     selectedCat,
     search,
     levelFilter,
-    tagFilter,
+    facets,
+    activeList,
     showFavorites,
     vocab.words,
     vocab.wordsBySubcategory,
     vocab.wordsByCategory,
     vocab.favorites,
+  ]);
+
+  // Axes proposés : la nature d'abord (colonne de « Mots »), puis les familles
+  // de tags, dans l'ordre du plus général au plus fin.
+  const facetFamilies = useMemo(() => {
+    const fams = [];
+    if ((vocab.natures || []).length > 0) {
+      fams.push({ id: "nature", tags: vocab.natures });
+    }
+    for (const f of vocab.tagFamilies || []) fams.push(f);
+    return fams.sort((a, b) => {
+      const ia = ORDRE.indexOf(a.id), ib = ORDRE.indexOf(b.id);
+      return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+    });
+  }, [vocab.natures, vocab.tagFamilies]);
+
+  // Ensemble sur lequel les axes comptent : tout ce qui est filtré SAUF les
+  // axes eux-mêmes, pour que les nombres affichés soient ceux qu'on obtiendra.
+  const facetPool = useMemo(() => {
+    const listeActive = activeList
+      ? (vocab.lists || []).find((x) => x.id === activeList)
+      : null;
+    const base = listeActive
+      ? listeActive.wordIds.map((id) => vocab.wordById.get(id)).filter(Boolean)
+      : selectedSub
+      ? vocab.wordsBySubcategory.get(selectedSub.id) || []
+      : selectedCat
+      ? vocab.wordsByCategory.get(selectedCat.id) || []
+      : vocab.words;
+    const q = search ? normalize(search.trim()) : "";
+    return base.filter((w) => {
+      if (levelFilter && w.niveau !== levelFilter) return false;
+      if (showFavorites && !vocab.isFavorite(w.id)) return false;
+      if (q && trouveDans(w, q) === undefined) return false;
+      return true;
+    });
+  }, [
+    selectedSub, selectedCat, search, levelFilter, showFavorites, activeList,
+    vocab.words, vocab.wordsBySubcategory, vocab.wordsByCategory,
+    vocab.lists, vocab.wordById, vocab.favorites,
   ]);
 
   const subsOfSelectedCat = selectedCat
@@ -225,6 +293,24 @@ export default function App() {
           </label>
         )}
 
+        {/* Listes d'accès rapide : un bouton, un résultat. */}
+        <div className="toolbar-group">
+          {(vocab.lists || []).map((l) => (
+            <button
+              key={l.id}
+              className={`btn-pill${activeList === l.id ? " active" : ""}`}
+              onClick={() => {
+                setActiveList(activeList === l.id ? null : l.id);
+                setSelectedCat(null);
+                setSelectedSub(null);
+                setShowFavorites(false);
+              }}
+            >
+              {l.icon} {l.label}
+            </button>
+          ))}
+        </div>
+
         <div className="toolbar-group">
           {vocab.allLevels.map((lvl) => {
             const c = vocab.levelColors[lvl];
@@ -287,18 +373,22 @@ export default function App() {
         )}
       </div>
 
-      {vocab.allTags.length > 0 && (
-        <div className="tag-bar">
-          <span className="tag-bar-label">Tags :</span>
-          {vocab.allTags.map((t) => (
-            <button
-              key={t}
-              className={`tag-chip clickable ${tagFilter === t ? "active" : ""}`}
-              onClick={() => setTagFilter(tagFilter === t ? null : t)}
-            >
-              #{t}
-            </button>
-          ))}
+      <FacetBar
+        familles={facetFamilies}
+        pool={facetPool}
+        actifs={facets}
+        onToggle={toggleFacet}
+        wordById={vocab.wordById}
+      />
+
+      {hasFacets && (
+        <div className="facet-active">
+          <button className="crumb" onClick={() => setFacets({})}>
+            ✕ Tout afficher
+          </button>
+          <span className="facet-active-count">
+            {visibleWords.length} mot{visibleWords.length > 1 ? "s" : ""}
+          </span>
         </div>
       )}
 
@@ -345,7 +435,7 @@ export default function App() {
           />
         ) : (
           <>
-            {!selectedCat && !showFavorites && !search && !levelFilter && !tagFilter && (
+            {!selectedCat && !showFavorites && !search && !levelFilter && !hasFacets && !activeList && (
               <div className="cat-grid">
                 {vocab.categories.map((cat) => {
                   const subs = vocab.subcategoriesByCategory.get(cat.id) || [];
@@ -445,7 +535,7 @@ export default function App() {
             )}
 
             {visibleWords.length > 0 &&
-              !(selectedCat && !selectedSub && subsOfSelectedCat.length > 0 && !search && !levelFilter && !tagFilter) && (
+              !(selectedCat && !selectedSub && subsOfSelectedCat.length > 0 && !search && !levelFilter && !hasFacets) && (
                 <div className="word-grid">
                   {visibleWords.map((w, i) => (
                     <WordTile
@@ -460,7 +550,7 @@ export default function App() {
                 </div>
               )}
 
-            {(search || levelFilter || tagFilter || showFavorites) &&
+            {(search || levelFilter || hasFacets || showFavorites) &&
               visibleWords.length === 0 &&
               !selectedCat && (
                 <div className="empty-state">
