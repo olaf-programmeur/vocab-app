@@ -30,3 +30,6 @@ public/_*.py
 *.njsproj
 *.sln
 *.sw?
+
+# Fichiers verrous d'Excel
+~$*
