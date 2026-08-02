@@ -53,47 +53,38 @@ export default function WordDetail({
           <WordGallery urls={word.urls} search={word.search} size={280} />
           <div className="detail-title-block">
             <h2 className="detail-word">{word.word}</h2>
-            {voixDispo && (
-              <div className="detail-ecoute">
+            {/* Sur un téléphone, chaque bloc empilé repoussait les mots reliés
+                hors de l'écran. Écoute, favori et catégorie tiennent sur une
+                seule ligne, qui se replie d'elle-même si la place manque.
+                Les tags ne sont pas affichés : ils servent à filtrer, les lire
+                n'apprend rien et ajoute du texte à déchiffrer. */}
+            <div className="detail-actions">
+              {voixDispo && (
                 <SpeakButton
                   texte={word.word}
                   lire={lire}
                   grand
                   titre={`Écouter « ${word.word} »`}
                 />
-              </div>
-            )}
-            <div className="detail-meta">
+              )}
               <button
                 className="fav-btn"
                 onClick={() => vocab.toggleFavorite(word.id)}
+                title={isFav ? "Retirer des favoris" : "Ajouter aux favoris"}
               >
-                {isFav ? "❤️ Retirer des favoris" : "🤍 Ajouter aux favoris"}
+                {isFav ? "❤️ Favori" : "🤍 Favori"}
               </button>
+              {subcatLabels.map((s) => (
+                <span key={s.id} className="cat-chip" style={{ background: s.color }}>
+                  {s.emoji} {s.label}
+                </span>
+              ))}
+              {catLabels.map((c) => (
+                <span key={c.id} className="cat-chip" style={{ background: c.color }}>
+                  {c.emoji} {c.label}
+                </span>
+              ))}
             </div>
-            {(subcatLabels.length > 0 || catLabels.length > 0) && (
-              <div className="detail-cats">
-                {subcatLabels.map((s) => (
-                  <span key={s.id} className="cat-chip" style={{ background: s.color }}>
-                    {s.emoji} {s.label}
-                  </span>
-                ))}
-                {catLabels.map((c) => (
-                  <span key={c.id} className="cat-chip" style={{ background: c.color }}>
-                    {c.emoji} {c.label}
-                  </span>
-                ))}
-              </div>
-            )}
-            {word.tags && word.tags.length > 0 && (
-              <div className="detail-tags">
-                {word.tags.map((t) => (
-                  <span key={t} className="tag-chip">
-                    #{t}
-                  </span>
-                ))}
-              </div>
-            )}
           </div>
         </div>
 

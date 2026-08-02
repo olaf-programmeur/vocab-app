@@ -870,19 +870,14 @@ html, body, #root {
   color: var(--text);
 }
 
-.detail-meta {
+/* Écoute, favori et catégorie sur une seule ligne : sur un téléphone, trois
+   blocs empilés mangeaient la hauteur avant même les mots reliés. */
+.detail-actions {
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
   align-items: center;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-
-.detail-cats, .detail-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 10px;
+  gap: 8px;
+  margin: 10px 0 4px;
 }
 
 .cat-chip {
@@ -1452,10 +1447,6 @@ html, body, #root {
   border-width: 2px;
   border-color: var(--accent, #4472c4);
   color: var(--accent, #4472c4);
-}
-
-.detail-ecoute {
-  margin: 10px 0 4px;
 }
 
 /* ── Fiche du mot ── */

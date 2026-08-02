@@ -10,6 +10,10 @@ import * as XLSX from "xlsx";
 const LS_FAVS = "vocab_favorites_v2";
 const DATA_URL = "/data.xlsx";
 
+// Nombre maximum de mots reliés affichés sur une fiche : autant que la feuille
+// « Liens » a de colonnes mot_N, pour qu'une ligne remplie s'affiche en entier.
+const MAX_MOTS_RELIES = 10;
+
 const slugify = (s) =>
   (s || "")
     .toLowerCase()
@@ -485,17 +489,31 @@ export function useVocab() {
   // Uniquement les liens explicites de la feuille « Liens » du data.xlsx.
   // Les mots de la même sous-catégorie ne sont PAS ajoutés automatiquement
   // (ils restent accessibles en remontant d'un niveau dans la navigation).
+  // Le lien reste bidirectionnel : sans quoi 273 mots, dont l'église, le maçon
+  // ou le fauteuil, n'afficheraient plus rien — personne n'a écrit de ligne
+  // pour eux. Mais l'ordre n'est pas neutre : ce qui est écrit sur la ligne du
+  // mot est un choix délibéré et passe donc en premier ; les liens venus
+  // d'ailleurs complètent. La relation est réelle mais pas toujours
+  // symétrique — l'inquiétude mène à la colère, l'inverse bien moins.
   const getConnections = useCallback(
     (wordId) => {
-      const direct = new Set();
+      const sortants = [];   // écrits sur la ligne de ce mot, dans l'ordre des colonnes
+      const entrants = [];   // déclarés depuis la ligne d'un autre mot
       for (const c of connections) {
-        if (c.from === wordId) direct.add(c.to);
-        if (c.to === wordId) direct.add(c.from);
+        if (c.from === wordId) sortants.push(c.to);
+        else if (c.to === wordId) entrants.push(c.from);
       }
-      return Array.from(direct)
+      const vus = new Set();
+      const ordonnes = [];
+      for (const id of [...sortants, ...entrants]) {
+        if (id === wordId || vus.has(id)) continue;
+        vus.add(id);
+        ordonnes.push(id);
+      }
+      return ordonnes
         .map((id) => wordById.get(id))
         .filter(Boolean)
-        .slice(0, 8);
+        .slice(0, MAX_MOTS_RELIES);
     },
     [connections, wordById]
   );
