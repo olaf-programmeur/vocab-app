@@ -395,7 +395,19 @@ export default function App() {
             aria-label="Revenir à mes listes"
             title="Revenir à mes listes"
           >
-            ←
+            {/* Flèche dessinée plutôt que le caractère « ← » : celui-ci se cale
+                sur la ligne de base de la police et reste décentré dans un
+                bouton rond, différemment selon la police disponible. */}
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">
+              <path
+                d="M17 12H5m0 0 7.5-7.5m-7.5 7.5 7.5 7.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </button>
           <span className="liste-ouverte-titre">
             <span className="liste-icone">{listeOuverte.icon}</span>

@@ -1623,11 +1623,15 @@ html, body, #root {
   border: 1.5px solid var(--border);
   background: var(--card);
   color: var(--text);
-  font-size: 1.35rem;
-  line-height: 1;
   font-family: inherit;
   cursor: pointer;
   transition: all 0.15s;
+}
+
+/* display:block : sans cela le SVG est traité comme du texte et repose sur la
+   ligne de base, ce qui le décale vers le bas. */
+.liste-retour svg {
+  display: block;
 }
 
 .liste-retour:hover {
