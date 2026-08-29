@@ -5,7 +5,6 @@ import AdminPrompt from "./AdminPrompt.jsx";
 import WordImage from "./WordImage.jsx";
 import WordTile from "./WordTile.jsx";
 import WordDetail from "./WordDetail.jsx";
-import ListView from "./ListView.jsx";
 import FacetBar, { ORDRE } from "./FacetBar.jsx";
 import Quiz from "./Quiz.jsx";
 import ImportExport from "./ImportExport.jsx";
@@ -14,7 +13,6 @@ import "./styles.css";
 const MODES = [
   { id: "trouver", icone: "🔎", label: "Trouver", titre: "Trouver un mot en répondant à des questions" },
   { id: "cartes", icone: "🟦", label: "Cartes", titre: "Parcourir les images par thème" },
-  { id: "liste", icone: "📋", label: "Liste", titre: "Parcourir la liste des thèmes" },
   { id: "listes", icone: "⭐", label: "Mes listes", titre: "Ouvrir une liste toute faite" },
 ];
 
@@ -49,8 +47,6 @@ export default function App() {
     setActiveList(null);
     setFacets({});
   };
-  const viewMode = mode === "liste" ? "list" : "grid";
-  const [showSubsInList, setShowSubsInList] = useState(true);
   const [search, setSearch] = useState("");
   const [showFavorites, setShowFavorites] = useState(false);
   // Un axe = une famille de tags ; au plus une valeur choisie par axe.
@@ -64,6 +60,22 @@ export default function App() {
     });
   const hasFacets = Object.keys(facets).length > 0;
   const [activeList, setActiveList] = useState(null);
+  // La liste ouverte, ou null. Décide si l'on montre la grille des choix ou
+  // le contenu de la liste.
+  const listeOuverte = useMemo(
+    () =>
+      activeList
+        ? (vocab.lists || []).find((x) => x.id === activeList) || null
+        : null,
+    [activeList, vocab.lists]
+  );
+  // Ouvrir une liste escamote la grille des choix : on remonte en haut, sinon
+  // la personne qui avait fait défiler pour atteindre sa case reste devant du
+  // vide et croit que rien ne s'est passé.
+  const ouvrirListe = (id) => {
+    setActiveList(id);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   // Modales
   const [quizOpen, setQuizOpen] = useState(false);
@@ -279,9 +291,9 @@ export default function App() {
           )}
         </div>
 
-        {/* Quatre façons d'arriver au mot, séparées : chercher en répondant à
-            des questions, parcourir les images, parcourir l'arborescence, ou
-            ouvrir une liste toute faite. Chacune a son écran. */}
+        {/* Trois façons d'arriver au mot, séparées : chercher en répondant à
+            des questions, parcourir les images par thème, ou ouvrir une liste
+            toute faite. Chacune a son écran. */}
         <div className="toolbar-group modes">
           {MODES.map((m) => (
             <button
@@ -295,31 +307,26 @@ export default function App() {
           ))}
         </div>
 
-        {mode === "liste" && (
-          <label className="list-toggle">
-            <input
-              type="checkbox"
-              checked={showSubsInList}
-              onChange={(e) => setShowSubsInList(e.target.checked)}
-            />
-            <span>Sous-cat.</span>
-          </label>
+        {/* Sur l'écran « Mes listes », ces deux boutons n'ont pas d'objet : ils
+            n'y mènent nulle part et repoussent les cases vers le bas. */}
+        {mode !== "listes" && (
+          <>
+            <button
+              className={`btn-pill ${showFavorites ? "active" : ""}`}
+              onClick={() => {
+                setShowFavorites(!showFavorites);
+                setSelectedCat(null);
+                setSelectedSub(null);
+              }}
+            >
+              ❤️ Favoris ({vocab.favorites.length})
+            </button>
+
+            <button className="btn-secondary" onClick={() => setQuizOpen(true)}>
+              🎯 Quiz
+            </button>
+          </>
         )}
-
-        <button
-          className={`btn-pill ${showFavorites ? "active" : ""}`}
-          onClick={() => {
-            setShowFavorites(!showFavorites);
-            setSelectedCat(null);
-            setSelectedSub(null);
-          }}
-        >
-          ❤️ Favoris ({vocab.favorites.length})
-        </button>
-
-        <button className="btn-secondary" onClick={() => setQuizOpen(true)}>
-          🎯 Quiz
-        </button>
 
         {admin.isAdmin && (
           <>
@@ -354,17 +361,19 @@ export default function App() {
         />
       )}
 
-      {mode === "listes" && (
+      {/* Tant qu'aucune liste n'est ouverte, la grille des choix. Le nombre de
+          mots n'y figure pas : il n'apprend rien et allonge les cases. */}
+      {mode === "listes" && !listeOuverte && (
         <div className="listes-choix">
           {(vocab.lists || []).map((l) => (
             <button
               key={l.id}
-              className={`liste-carte${activeList === l.id ? " active" : ""}`}
-              onClick={() => setActiveList(activeList === l.id ? null : l.id)}
+              className="liste-carte"
+              onClick={() => ouvrirListe(l.id)}
+              title={l.label}
             >
               <span className="liste-icone">{l.icon}</span>
               <span className="liste-label">{l.label}</span>
-              <span className="liste-compte">{l.wordIds.length} mots</span>
             </button>
           ))}
           {(vocab.lists || []).length === 0 && (
@@ -373,6 +382,25 @@ export default function App() {
               « Listes » du fichier de données.
             </div>
           )}
+        </div>
+      )}
+
+      {/* Liste ouverte : la grille s'efface au profit d'une seule ligne, pour
+          que les images remontent là où se trouvaient les cases. */}
+      {mode === "listes" && listeOuverte && (
+        <div className="liste-ouverte">
+          <button
+            className="liste-retour"
+            onClick={() => setActiveList(null)}
+            aria-label="Revenir à mes listes"
+            title="Revenir à mes listes"
+          >
+            ←
+          </button>
+          <span className="liste-ouverte-titre">
+            <span className="liste-icone">{listeOuverte.icon}</span>
+            {listeOuverte.label}
+          </span>
         </div>
       )}
 
@@ -420,138 +448,127 @@ export default function App() {
       )}
 
       <main className="main-content">
-        {viewMode === "list" && !selectedCat && !selectedSub && !showFavorites ? (
-          <ListView
-            vocab={vocab}
-            onSelectWord={openWord}
-            search={search}
-            showSubs={showSubsInList}
-          />
-        ) : (
-          <>
-            {mode === "cartes" && !selectedCat && !showFavorites && !search && (
-              <div className="cat-grid">
-                {vocab.categories.map((cat) => {
-                  const subs = vocab.subcategoriesByCategory.get(cat.id) || [];
-                  const wordsInCat = vocab.wordsByCategory.get(cat.id) || [];
-                  const count = wordsInCat.length;
-                  const previewItems =
-                    subs.length > 0
-                      ? subs.slice(0, 5).map((s) => ({
-                          label: s.label,
-                          emoji: s.emoji,
-                          color: s.color,
-                          isSub: true,
-                        }))
-                      : wordsInCat.slice(0, 5).map((w) => ({
-                          label: w.word,
-                          isSub: false,
-                        }));
-                  return (
-                    <div
-                      key={cat.id}
-                      className="cat-tile"
-                      style={{ "--cat-color": cat.color }}
-                      onClick={() => setSelectedCat(cat)}
-                    >
-                      <div className="cat-tile-img">
-                        <WordImage url={cat.url} search={cat.cover} size={160} />
-                      </div>
-                      <div className="cat-tile-info">
-                        <div className="cat-tile-head">
-                          <span className="cat-emoji">{cat.emoji}</span>
-                          <span className="cat-label">{cat.label}</span>
-                        </div>
-                        <div className="cat-preview">
-                          {previewItems.map((item) => (
-                            <span
-                              key={item.label}
-                              className="prev-tag"
-                              style={
-                                item.isSub
-                                  ? {
-                                      background: (item.color || cat.color) + "18",
-                                      color: item.color || cat.color,
-                                      borderColor: (item.color || cat.color) + "44",
-                                    }
-                                  : undefined
-                              }
-                            >
-                              {item.isSub ? `${item.emoji || "📁"} ` : ""}
-                              {item.label}
-                            </span>
-                          ))}
-                        </div>
-                        <div className="cat-count">{count} mots</div>
-                      </div>
+        {mode === "cartes" && !selectedCat && !showFavorites && !search && (
+          <div className="cat-grid">
+            {vocab.categories.map((cat) => {
+              const subs = vocab.subcategoriesByCategory.get(cat.id) || [];
+              const wordsInCat = vocab.wordsByCategory.get(cat.id) || [];
+              const count = wordsInCat.length;
+              const previewItems =
+                subs.length > 0
+                  ? subs.slice(0, 5).map((s) => ({
+                      label: s.label,
+                      emoji: s.emoji,
+                      color: s.color,
+                      isSub: true,
+                    }))
+                  : wordsInCat.slice(0, 5).map((w) => ({
+                      label: w.word,
+                      isSub: false,
+                    }));
+              return (
+                <div
+                  key={cat.id}
+                  className="cat-tile"
+                  style={{ "--cat-color": cat.color }}
+                  onClick={() => setSelectedCat(cat)}
+                >
+                  <div className="cat-tile-img">
+                    <WordImage url={cat.url} search={cat.cover} size={160} />
+                  </div>
+                  <div className="cat-tile-info">
+                    <div className="cat-tile-head">
+                      <span className="cat-emoji">{cat.emoji}</span>
+                      <span className="cat-label">{cat.label}</span>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {selectedCat && !selectedSub && subsOfSelectedCat.length > 0 && (
-              <div className="cat-grid">
-                {subsOfSelectedCat.map((sub) => {
-                  const subWords = vocab.wordsBySubcategory.get(sub.id) || [];
-                  const count = subWords.length;
-                  const previewItems = subWords
-                    .slice(0, 5)
-                    .map((w) => ({ label: w.word }));
-                  return (
-                    <div
-                      key={sub.id}
-                      className="cat-tile small"
-                      style={{ "--cat-color": sub.color }}
-                      onClick={() => setSelectedSub(sub)}
-                    >
-                      <div className="cat-tile-img">
-                        <WordImage url={sub.url} search={sub.cover} size={140} />
-                      </div>
-                      <div className="cat-tile-info">
-                        <div className="cat-tile-head">
-                          <span className="cat-emoji">{sub.emoji}</span>
-                          <span className="cat-label">{sub.label}</span>
-                        </div>
-                        <div className="cat-preview">
-                          {previewItems.map((item) => (
-                            <span key={item.label} className="prev-tag">
-                              {item.label}
-                            </span>
-                          ))}
-                        </div>
-                        <div className="cat-count">{count} mots</div>
-                      </div>
+                    <div className="cat-preview">
+                      {previewItems.map((item) => (
+                        <span
+                          key={item.label}
+                          className="prev-tag"
+                          style={
+                            item.isSub
+                              ? {
+                                  background: (item.color || cat.color) + "18",
+                                  color: item.color || cat.color,
+                                  borderColor: (item.color || cat.color) + "44",
+                                }
+                              : undefined
+                          }
+                        >
+                          {item.isSub ? `${item.emoji || "📁"} ` : ""}
+                          {item.label}
+                        </span>
+                      ))}
                     </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {visibleWords.length > 0 &&
-              !(selectedCat && !selectedSub && subsOfSelectedCat.length > 0 && !search && !hasFacets) && (
-                <div className="word-grid">
-                  {visibleWords.map((w, i) => (
-                    <WordTile
-                      key={`${w.id}-${i}`}
-                      word={w}
-                      isFavorite={vocab.isFavorite(w.id)}
-                      onToggleFav={vocab.toggleFavorite}
-                      onClick={() => openWord(w)}
-                    />
-                  ))}
+                    <div className="cat-count">{count} mots</div>
+                  </div>
                 </div>
-              )}
-
-            {(search || hasFacets || showFavorites) &&
-              visibleWords.length === 0 &&
-              !selectedCat && (
-                <div className="empty-state">
-                  Aucun mot ne correspond à ta recherche.
-                </div>
-              )}
-          </>
+              );
+            })}
+          </div>
         )}
+
+        {selectedCat && !selectedSub && subsOfSelectedCat.length > 0 && (
+          <div className="cat-grid">
+            {subsOfSelectedCat.map((sub) => {
+              const subWords = vocab.wordsBySubcategory.get(sub.id) || [];
+              const count = subWords.length;
+              const previewItems = subWords
+                .slice(0, 5)
+                .map((w) => ({ label: w.word }));
+              return (
+                <div
+                  key={sub.id}
+                  className="cat-tile small"
+                  style={{ "--cat-color": sub.color }}
+                  onClick={() => setSelectedSub(sub)}
+                >
+                  <div className="cat-tile-img">
+                    <WordImage url={sub.url} search={sub.cover} size={140} />
+                  </div>
+                  <div className="cat-tile-info">
+                    <div className="cat-tile-head">
+                      <span className="cat-emoji">{sub.emoji}</span>
+                      <span className="cat-label">{sub.label}</span>
+                    </div>
+                    <div className="cat-preview">
+                      {previewItems.map((item) => (
+                        <span key={item.label} className="prev-tag">
+                          {item.label}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="cat-count">{count} mots</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {visibleWords.length > 0 &&
+          !(selectedCat && !selectedSub && subsOfSelectedCat.length > 0 && !search && !hasFacets) && (
+            <div className="word-grid">
+              {visibleWords.map((w, i) => (
+                <WordTile
+                  key={`${w.id}-${i}`}
+                  word={w}
+                  isFavorite={vocab.isFavorite(w.id)}
+                  onToggleFav={vocab.toggleFavorite}
+                  onClick={() => openWord(w)}
+                />
+              ))}
+            </div>
+          )}
+
+        {(search || hasFacets || showFavorites) &&
+          visibleWords.length === 0 &&
+          !selectedCat && (
+            <div className="empty-state">
+              Aucun mot ne correspond à ta recherche.
+            </div>
+          )}
       </main>
 
       {(selectedCat || selectedSub) && (

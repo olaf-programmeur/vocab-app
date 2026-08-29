@@ -222,38 +222,6 @@ html, body, #root {
 .level-btn.active.lB1 { background: var(--l-B1); color: white; }
 .level-btn.active.lB2 { background: var(--l-B2); color: white; }
 
-/* Toggle "afficher sous-catégories" en mode liste */
-.list-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 10px;
-  background: var(--card);
-  border: 1.5px solid var(--border);
-  border-radius: 9px;
-  cursor: pointer;
-  font-family: 'DM Sans', "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", sans-serif;
-  font-size: 0.75rem;
-  color: var(--text2);
-  user-select: none;
-  transition: all 0.15s;
-  white-space: nowrap;
-  line-height: 1;
-}
-
-.list-toggle:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.list-toggle input[type="checkbox"] {
-  cursor: pointer;
-  accent-color: var(--accent);
-  width: 13px;
-  height: 13px;
-  margin: 0;
-}
-
 /* Liste à plat (sans sous-cat) */
 .list-words.flat {
   padding-left: 8px;
@@ -1187,6 +1155,13 @@ html, body, #root {
   .quiz-options { grid-template-columns: 1fr; }
   .detail-card { padding: 44px 20px 20px; }
   .detail-word { font-size: 1.7rem; }
+  /* Deux colonnes sur téléphone : les noms de listes restent lisibles d'un
+     coup d'œil, ce qui prime ici sur le fait de tout faire tenir à l'écran. */
+  .listes-choix { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 7px; }
+  .liste-carte { min-height: 62px; padding: 8px 6px; }
+  .liste-icone { font-size: 1.25rem; }
+  .liste-label { font-size: 0.84rem; }
+  .liste-ouverte-titre { font-size: 1.05rem; }
 }
 
 /* ─── IMPORT / EXPORT EXCEL ─── */
@@ -1578,48 +1553,96 @@ html, body, #root {
   font-weight: 600;
 }
 
-/* Écran « Mes listes » : de grandes cartes, une par liste. */
+/* Écran « Mes listes ». Grille plutôt que flex : les cases s'alignent en
+   colonnes égales. La largeur est bornée pour que les cases restent grandes
+   et lisibles sur un grand écran, quitte à tenir sur plusieurs lignes —
+   entasser toutes les listes sur une seule ligne les rendrait minuscules. */
 .listes-choix {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+  max-width: 860px;
+  margin-bottom: 14px;
 }
 
 .liste-carte {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  min-height: 88px;
-  min-width: 160px;
-  padding: 14px 18px;
-  border-radius: 12px;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 76px;
+  padding: 12px 10px;
+  border-radius: 11px;
   border: 1px solid var(--border);
   background: var(--card);
   font-family: inherit;
   cursor: pointer;
-  text-align: left;
+  text-align: center;
+  transition: border-color 0.15s, transform 0.1s;
 }
 
-.liste-carte.active {
-  border-color: var(--accent, #4472c4);
-  border-width: 2px;
+.liste-carte:hover {
+  border-color: var(--accent);
+}
+
+/* Repère tactile : la case s'enfonce à l'appui. Sur un écran où le résultat
+   arrive au-dessus du doigt, ce retour immédiat compte. */
+.liste-carte:active {
+  transform: scale(0.96);
 }
 
 .liste-icone {
-  font-size: 1.6rem;
+  font-size: 1.5rem;
+  line-height: 1;
 }
 
 .liste-label {
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--text);
+  line-height: 1.2;
 }
 
-.liste-compte {
-  font-size: 0.85rem;
-  color: var(--text2);
+/* Liste ouverte : une seule ligne, flèche de retour et nom de la liste. */
+.liste-ouverte {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.liste-retour {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 1.35rem;
+  line-height: 1;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.liste-retour:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.liste-ouverte-titre {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
 }
 
 .facet-autre {
